@@ -28,6 +28,6 @@ public class Colaborador {
     @Column
     private Boolean ativo = true;
 
-    @Column(columnDefinition = "TIMESTAMP DEAFULT CURRENT_TIMESTAMP")
+    @Column(columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
     private LocalDateTime criadoEm;
 }
