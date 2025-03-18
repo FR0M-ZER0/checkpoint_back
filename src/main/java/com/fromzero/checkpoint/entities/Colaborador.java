@@ -7,6 +7,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
 import lombok.Data;
 
 @Entity
@@ -28,6 +29,11 @@ public class Colaborador {
     @Column
     private Boolean ativo = true;
 
-    @Column(columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+    @Column
     private LocalDateTime criadoEm;
+
+    @PrePersist
+    public void prePersist() {
+        if (this.criadoEm == null) this.criadoEm = LocalDateTime.now();
+    }
 }
