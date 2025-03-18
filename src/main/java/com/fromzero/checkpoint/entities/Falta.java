@@ -11,6 +11,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
 import lombok.Data;
 
 @Entity
@@ -20,7 +21,7 @@ public class Falta {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+    @Column
     private LocalDateTime criadoEm;
 
     @ManyToOne
@@ -34,4 +35,9 @@ public class Falta {
 
     @Enumerated(EnumType.STRING)
     private TipoFalta tipo;
+
+    @PrePersist
+    public void prePersist() {
+        if (this.criadoEm == null) this.criadoEm = LocalDateTime.now();
+    }
 }
