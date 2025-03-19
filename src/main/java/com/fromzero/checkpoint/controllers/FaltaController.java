@@ -42,5 +42,4 @@ public class FaltaController {
     public Falta obterFalta(@RequestParam Long id) {
         return repository.findById(id).get();
     }
-    
 }

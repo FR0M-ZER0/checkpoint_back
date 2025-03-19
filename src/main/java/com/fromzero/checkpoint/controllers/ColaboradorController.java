@@ -10,12 +10,20 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fromzero.checkpoint.entities.Colaborador;
+import com.fromzero.checkpoint.entities.Falta;
 import com.fromzero.checkpoint.repositories.ColaboradorRepository;
+import com.fromzero.checkpoint.repositories.FaltaRepository;
+
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 @RestController
 public class ColaboradorController {
     @Autowired
     private ColaboradorRepository repository;
+
+    @Autowired
+    private FaltaRepository faltaRepository;
 
     @PostMapping("/colaborador")
     public Colaborador cadastrarColaborador(@RequestBody Colaborador c) {
@@ -32,4 +40,10 @@ public class ColaboradorController {
     public Colaborador obterColaborador(@PathVariable Long id) {
         return repository.findById(id).get();
     }
+
+    @GetMapping("/colaborador/faltas/{id}")
+    public List<Falta> obterFaltasPorColaborador(@PathVariable Long id) {
+        return faltaRepository.findByColaboradorId(id);
+    }
+    
 }
