@@ -14,7 +14,6 @@ import com.fromzero.checkpoint.entities.Falta;
 import com.fromzero.checkpoint.repositories.ColaboradorRepository;
 import com.fromzero.checkpoint.repositories.FaltaRepository;
 
-import org.springframework.web.bind.annotation.RequestParam;
 
 
 @RestController
@@ -45,5 +44,9 @@ public class ColaboradorController {
     public List<Falta> obterFaltasPorColaborador(@PathVariable Long id) {
         return faltaRepository.findByColaboradorId(id);
     }
-    
+
+    @GetMapping("/colaborador/falta/sem-solicitacao/{id}")
+    public List<Falta> obterFaltasSemSolicitacao(@PathVariable Long id) {
+        return faltaRepository.obterFaltasSemSolicitacao(id);
+    }
 }
