@@ -1,5 +1,7 @@
 package com.fromzero.checkpoint.services;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -28,5 +30,9 @@ public class NotificacaoService {
         messagingTemplate.convertAndSend("/topic/notificacoes", notificacao);
 
         return notificacao;
+    }
+
+    public List<Notificacao> buscarNotificacoesNaoLidas(Long colaboradorId) {
+        return repository.findByColaboradorIdAndLidaFalse(colaboradorId);
     }
 }
