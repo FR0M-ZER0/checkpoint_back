@@ -9,6 +9,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import lombok.Data;
 
@@ -27,6 +28,9 @@ public class Notificacao {
 
     @Column
     private LocalDateTime criadoEm;
+
+    @ManyToOne
+    private Colaborador colaborador;
 
     public enum NotificacaoTipo {
         folga,

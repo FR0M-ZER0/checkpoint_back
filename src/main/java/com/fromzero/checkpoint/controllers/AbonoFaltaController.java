@@ -68,7 +68,7 @@ public class AbonoFaltaController {
 
         repository.save(solicitacao);
 
-        notificacaoService.criaNotificacao("Sua solicitação de abono de falta foi solicitada", NotificacaoTipo.abono);
+        notificacaoService.criaNotificacao("Sua solicitação de abono de falta foi solicitada", NotificacaoTipo.abono, falta.getColaborador());
         
         return solicitacao;
     }  
