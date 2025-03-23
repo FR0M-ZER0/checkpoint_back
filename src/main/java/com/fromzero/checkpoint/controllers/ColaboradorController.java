@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -14,6 +15,7 @@ import com.fromzero.checkpoint.entities.Falta;
 import com.fromzero.checkpoint.entities.Notificacao;
 import com.fromzero.checkpoint.repositories.ColaboradorRepository;
 import com.fromzero.checkpoint.repositories.FaltaRepository;
+import com.fromzero.checkpoint.repositories.NotificacaoRepository;
 import com.fromzero.checkpoint.services.NotificacaoService;
 
 
@@ -25,6 +27,9 @@ public class ColaboradorController {
 
     @Autowired
     private FaltaRepository faltaRepository;
+
+    @Autowired
+    private NotificacaoRepository notificacaoRepository;
 
     @Autowired
     private NotificacaoService notificacaoService;
@@ -58,5 +63,16 @@ public class ColaboradorController {
     @GetMapping("/colaborador/notificacoes/{id}")
     public List<Notificacao> obterNotificacoesNaoLidas(@PathVariable Long id) {
         return notificacaoService.buscarNotificacoesNaoLidas(id);
+    }
+
+    @PutMapping("/colaborador/notificacao/{notificacaoId}")
+    public Notificacao marcarNotificacaoComoLida(@PathVariable Long notificacaoId) {
+        Notificacao notificacao = notificacaoRepository.findById(notificacaoId)
+            .orElseThrow(() -> new RuntimeException("Notificação não encontrada"));
+
+        notificacao.setLida(true);
+        notificacaoRepository.save(notificacao);
+
+        return notificacao;
     }
 }
