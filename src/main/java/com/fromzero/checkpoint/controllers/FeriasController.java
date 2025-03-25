@@ -1,30 +1,27 @@
 package com.fromzero.checkpoint.controllers;
 
-import com.fromzero.checkpoint.models.Ferias;
 import com.fromzero.checkpoint.services.FeriasService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/ferias")
+@RequestMapping("/api/ferias")
 public class FeriasController {
 
-    private final FeriasService feriasService;
+    @Autowired
+    private FeriasService feriasService;
 
-    public FeriasController(FeriasService feriasService) {
-        this.feriasService = feriasService;
-    }
-
-    @PostMapping
-    public ResponseEntity<Ferias> solicitarFerias(@RequestBody Ferias ferias) {
-        Ferias novaFerias = feriasService.solicitarFerias(ferias);
-        return ResponseEntity.ok(novaFerias);
-    }
-
-    @GetMapping("/{colaboradorId}")
-    public ResponseEntity<List<Ferias>> listarFerias(@PathVariable Long colaboradorId) {
-        return ResponseEntity.ok(feriasService.listarFerias(colaboradorId));
+    @GetMapping("/saldo")
+    public ResponseEntity<Double> getSaldoFerias(@RequestParam Integer colaboradorId) {
+        try {
+            Double saldo = feriasService.obterSaldoFerias(colaboradorId);
+            return ResponseEntity.ok(saldo);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(null);
+        }
     }
 }

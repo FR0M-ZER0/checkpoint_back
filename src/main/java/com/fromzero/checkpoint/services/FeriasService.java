@@ -1,34 +1,22 @@
-package com.fromzero.checkpoint;
+package com.fromzero.checkpoint.services;
 
-import com.fromzero.checkpoint.models.Ferias;
-import com.fromzero.checkpoint.repositories.FeriasRepository;
+import com.fromzero.checkpoint.models.Colaborador;
+import com.fromzero.checkpoint.repositories.ColaboradorRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import java.time.Year;
-import java.util.List;
 
 @Service
 public class FeriasService {
 
     @Autowired
-    private FeriasRepository feriasRepository;
+    private ColaboradorRepository colaboradorRepository;
 
-    public List<Ferias> listarFerias(Long colaboradorId) {
-        return feriasRepository.findByColaboradorId(colaboradorId);
+    public Double obterSaldoFerias(Integer colaboradorId) {
+        Colaborador colaborador = colaboradorRepository.findById(colaboradorId)
+                .orElseThrow(() -> new RuntimeException("Colaborador não encontrado com o ID: " + colaboradorId));
+        return colaborador.getSaldoFerias();
     }
 
-    public boolean podeSolicitarFerias(Long colaboradorId) {
-        int anoAtual = Year.now().getValue();
-        long totalFeriasAno = listarFerias(colaboradorId).stream()
-            .filter(f -> f.getDataInicio().getYear() == anoAtual)
-            .count();
-        return totalFeriasAno < 3;
-    }
-
-    public Ferias solicitarFerias(Ferias ferias) {
-        if (!podeSolicitarFerias(ferias.getColaborador().getId())) {
-            throw new RuntimeException("Máximo de 3 períodos de férias por ano atingido!");
-        }
-        return feriasRepository.save(ferias);
-    }
+    // Adicionaremos a lógica para descontar o saldo de férias aqui posteriormente
+    // public void descontarSaldoFerias(Integer colaboradorId, Double dias) { ... }
 }
