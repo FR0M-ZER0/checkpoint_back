@@ -5,7 +5,9 @@ import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.fromzero.checkpoint.model.Marcacao;
+import com.fromzero.checkpoint.model.MarcacaoLog;
 import com.fromzero.checkpoint.repository.MarcacaoRepository;
+import com.fromzero.checkpoint.repository.MarcacaoLogRepository;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -20,6 +22,9 @@ public class MarcacaoService {
 
     @Autowired
     private MarcacaoRepository marcacaoRepository;
+
+    @Autowired
+    private MarcacaoLogRepository marcacaoLogRepository;
 
     // Listar todas as marcações
     public List<Marcacao> listarMarcacoes() {
@@ -40,6 +45,11 @@ public class MarcacaoService {
 
         Marcacao novaMarcacao = marcacaoRepository.save(marcacao);
         logger.info("Marcação registrada com sucesso: {}", novaMarcacao);
+
+        // Criar log
+        MarcacaoLog log = new MarcacaoLog(marcacao.getColaboradorId(), "CRIACAO", marcacao.getTipo());
+        marcacaoLogRepository.save(log);
+
         return novaMarcacao;
     }
 
@@ -71,6 +81,10 @@ public class MarcacaoService {
 
         marcacaoRepository.deleteById(id);
         logger.info("Marcação deletada com sucesso: {}", id);
+
+        // Criar log de exclusão
+        MarcacaoLog log = new MarcacaoLog(marcacao.getColaboradorId(), "DELECAO", marcacao.getTipo());
+        marcacaoLogRepository.save(log);
     }
 
     // Método para validar marcações duplicadas no mesmo dia
