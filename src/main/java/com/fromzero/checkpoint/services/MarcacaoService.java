@@ -105,4 +105,17 @@ public class MarcacaoService {
             throw new RuntimeException("Já existe uma marcação do mesmo tipo para este colaborador hoje.");
         }
     }
+
+    // Obter marcações do dia atual de um colaborador específico
+    public List<Marcacao> obterMarcacoesDoDia(Long colaboradorId, LocalDate data) {
+        LocalDateTime inicioDoDia = data.atStartOfDay();
+        LocalDateTime fimDoDia = data.atTime(LocalTime.MAX);
+
+        return marcacaoRepository.findByColaboradorIdAndDataHoraBetween(colaboradorId, inicioDoDia, fimDoDia);
+    }
+
+    // Obter todas as marcações de um colaborador específico
+    public List<Marcacao> obterTodasMarcacoesPorColaborador(Long colaboradorId) {
+        return marcacaoRepository.findByColaboradorId(colaboradorId);
+    }
 }
