@@ -10,3 +10,4 @@ public interface ColaboradorRepository extends JpaRepository<Colaborador, Intege
     // Por exemplo, para buscar um colaborador pelo email:
     // Optional<Colaborador> findByEmail(String email);
 }
+
