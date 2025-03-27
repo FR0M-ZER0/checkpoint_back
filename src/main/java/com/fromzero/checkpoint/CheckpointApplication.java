@@ -7,7 +7,7 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
 import io.github.cdimascio.dotenv.Dotenv;
 
 @SpringBootApplication
-@EnableMongoRepositories(basePackages = "com.fromzero.checkpoint.repository")
+@EnableMongoRepositories(basePackages = "com.fromzero.checkpoint.repositories")
 public class CheckpointApplication {
 	static {
 		Dotenv dotenv = Dotenv.load();
