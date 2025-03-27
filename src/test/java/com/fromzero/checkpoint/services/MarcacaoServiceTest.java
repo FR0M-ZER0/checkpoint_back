@@ -2,6 +2,7 @@ package com.fromzero.checkpoint.services;
 
 import com.fromzero.checkpoint.entities.Marcacao;
 import com.fromzero.checkpoint.entities.Marcacao.TipoMarcacao;
+import com.fromzero.checkpoint.repositories.MarcacaoLogRepository;
 import com.fromzero.checkpoint.repositories.MarcacaoRepository;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -30,6 +31,9 @@ class MarcacaoServiceTest {
     private MarcacaoService marcacaoService;
 
     private Marcacao marcacao;
+
+    @Mock
+    private MarcacaoLogRepository marcacaoLogRepository;
 
     @BeforeEach
     void setUp() {

@@ -1,4 +1,4 @@
-package com.fromzero.checkpoint.controller;
+package com.fromzero.checkpoint.controllers;
 
 import com.fromzero.checkpoint.dto.MarcacaoDTO;
 import com.fromzero.checkpoint.entities.Marcacao;
