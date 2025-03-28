@@ -10,6 +10,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 
@@ -78,5 +79,13 @@ public class MarcacaoController {
     @GetMapping("/colaborador/{colaboradorId}")
     public List<Marcacao> obterTodasMarcacoesPorColaborador(@PathVariable Long colaboradorId) {
         return marcacaoService.obterTodasMarcacoesPorColaborador(colaboradorId);
+    }
+
+    // Obter marcações de um dia específico de um colaborador
+    @GetMapping("/colaborador/{colaboradorId}/data/{data}")
+    public List<Marcacao> obterMarcacoesPorData(
+            @PathVariable Long colaboradorId, 
+            @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data) {
+        return marcacaoService.obterMarcacoesPorData(colaboradorId, data);
     }
 }

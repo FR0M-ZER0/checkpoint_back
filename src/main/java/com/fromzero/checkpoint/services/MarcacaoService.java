@@ -1,7 +1,10 @@
 package com.fromzero.checkpoint.services;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -117,5 +120,13 @@ public class MarcacaoService {
     // Obter todas as marcações de um colaborador específico
     public List<Marcacao> obterTodasMarcacoesPorColaborador(Long colaboradorId) {
         return marcacaoRepository.findByColaboradorId(colaboradorId);
+    }
+
+    // Obter marcações de um dia específico de um colaborador
+    public List<Marcacao> obterMarcacoesPorData(Long colaboradorId, LocalDate data) {
+        LocalDateTime inicioDoDia = data.atStartOfDay();
+        LocalDateTime fimDoDia = data.atTime(LocalTime.MAX);
+
+        return marcacaoRepository.findByColaboradorIdAndDataHoraBetween(colaboradorId, inicioDoDia, fimDoDia);
     }
 }
