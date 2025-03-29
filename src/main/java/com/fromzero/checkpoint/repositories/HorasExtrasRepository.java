@@ -10,9 +10,9 @@ import java.util.List;
 @Repository
 public interface HorasExtrasRepository extends JpaRepository<HorasExtras, Long> {
 
-    // Busca todas as horas extras de um colaborador a partir de uma data específica
-    List<HorasExtras> findByColaboradorIdAndCriadoEmAfter(Long colaboradorId, LocalDateTime data);
-
-    // (opcional) busca todas as horas extras de um colaborador
+    // Método existente (da HEAD)
     List<HorasExtras> findByColaboradorId(Long colaboradorId);
+
+    // Novo método (da branch 80da494)
+    List<HorasExtras> findByColaboradorIdAndCriadoEmAfter(Long colaboradorId, LocalDateTime data);
 }
