@@ -6,9 +6,11 @@ import com.fromzero.checkpoint.services.MarcacaoService;
 
 import jakarta.validation.Valid;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 
@@ -65,5 +67,25 @@ public class MarcacaoController {
     public ResponseEntity<Void> deletarMarcacao(@PathVariable String id) {
         marcacaoService.deletarMarcacao(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // Obter marcações do dia atual de um colaborador específico
+    @GetMapping("/colaborador/{colaboradorId}/hoje")
+    public List<Marcacao> obterMarcacoesDoDia(@PathVariable Long colaboradorId) {
+        return marcacaoService.obterMarcacoesDoDia(colaboradorId, LocalDate.now());
+    }
+
+    // Obter todas as marcações de um colaborador específico
+    @GetMapping("/colaborador/{colaboradorId}")
+    public List<Marcacao> obterTodasMarcacoesPorColaborador(@PathVariable Long colaboradorId) {
+        return marcacaoService.obterTodasMarcacoesPorColaborador(colaboradorId);
+    }
+
+    // Obter marcações de um dia específico de um colaborador
+    @GetMapping("/colaborador/{colaboradorId}/data/{data}")
+    public List<Marcacao> obterMarcacoesPorData(
+            @PathVariable Long colaboradorId, 
+            @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data) {
+        return marcacaoService.obterMarcacoesPorData(colaboradorId, data);
     }
 }

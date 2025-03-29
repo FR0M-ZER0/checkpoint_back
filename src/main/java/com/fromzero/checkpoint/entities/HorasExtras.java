@@ -2,33 +2,48 @@ package com.fromzero.checkpoint.entities;
 
 import jakarta.persistence.*;
 import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "horas_extras")
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
+@Table(name = "horas_extras") // Mantém do development (mais consistente com outras tabelas)
+@Data // Adiciona Lombok da feat-holidays (sem quebrar funcionalidade)
 public class HorasExtras {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ext_id")
-    private Integer extId;
+    private Long id; // Mantém tipo do development
 
-    @Column(name = "ext_saldo")
+    @Column(name = "ext_saldo", nullable = false)
     private String saldo;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "ext_status", nullable = false)
-    private String extStatus;
+    private Status status; // Mantém enum do development
 
-    @Column(name = "colaborador_id")
-    private Long colaboradorId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "colaborador_id", nullable = false)
+    private Colaborador colaborador; // Mantém relacionamento JPA correto do development
 
-    @Column(name = "criado_em", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-    private LocalDateTime criadoEm;
+    @Column(
+        name = "criado_em", 
+        updatable = false,
+        columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP" // Combina ambas
+    )
+    private LocalDateTime criadoEm = LocalDateTime.now(); // Combina abordagens
 
-    // ... getters, setters, etc.
+    public enum Status {
+        Aprovado,
+        Rejeitado,
+        Pendente
+    }
+
+    // Construtores manuais (removemos @AllArgsConstructor por segurança)
+    public HorasExtras() {}
+    
+    public HorasExtras(String saldo, Status status, Colaborador colaborador) {
+        this.saldo = saldo;
+        this.status = status;
+        this.colaborador = colaborador;
+    }
 }

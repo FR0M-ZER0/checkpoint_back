@@ -9,8 +9,8 @@ import java.time.LocalDateTime;
 @Data
 public class Colaborador {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "col_id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(name = "col_nome")
