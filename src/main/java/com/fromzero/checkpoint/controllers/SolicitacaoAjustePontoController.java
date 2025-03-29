@@ -12,6 +12,7 @@ import com.fromzero.checkpoint.services.NotificacaoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -32,6 +33,9 @@ public class SolicitacaoAjustePontoController {
     @Autowired
     private NotificacaoService notificacaoService;
 
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
+
     @PostMapping("/solicitacao")
     public SolicitacaoAjustePonto create(@RequestBody SolicitacaoAjustePonto s) {
         repository.save(s);
@@ -40,6 +44,8 @@ public class SolicitacaoAjustePontoController {
         Colaborador colaborador = colaboradorRepository.findById(marcacao.getColaboradorId()).orElseThrow(() -> new RuntimeException("Marcação não encontrada"));
 
         notificacaoService.criaNotificacao("Sua solicitação de ajuste na marcação do ponto foi enviada", NotificacaoTipo.ponto, colaborador);
+
+        messagingTemplate.convertAndSend("/topic/solicitacoes", s);
 
         return s;
     }
