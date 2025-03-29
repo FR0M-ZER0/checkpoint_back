@@ -55,6 +55,11 @@ public class SolicitacaoAjustePontoController {
         return repository.findAll();
     }
 
+    @GetMapping("/solicitacao/pendentes")
+    public List<SolicitacaoAjustePonto> getPendentes() {
+        return repository.findByStatus(SolicitacaoAjustePonto.StatusMarcacao.pendente);
+    }
+
     @PutMapping("/solicitacao/{id}")
     public ResponseEntity<SolicitacaoAjustePonto> update(@PathVariable String id, @RequestBody SolicitacaoAjustePonto updatedSolicitacao) {
         Optional<SolicitacaoAjustePonto> optionalSolicitacao = repository.findById(id);
