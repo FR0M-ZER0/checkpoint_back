@@ -15,4 +15,7 @@ public interface HorasExtrasRepository extends JpaRepository<HorasExtras, Long> 
 
     // (opcional) busca todas as horas extras de um colaborador
     List<HorasExtras> findByColaboradorId(Long colaboradorId);
+
+    List<HorasExtras> findByColaboradorIdAndCriadoEmBetween(Long colaboradorId, LocalDateTime inicio, LocalDateTime fim);
+    
 }
