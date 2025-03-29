@@ -14,7 +14,7 @@ import lombok.Data;
 @Data
 public class Colaborador {
     @Id
-    @Column(name = "col_id")
+    @Column()
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
