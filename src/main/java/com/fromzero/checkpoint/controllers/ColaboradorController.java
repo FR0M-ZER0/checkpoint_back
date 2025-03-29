@@ -3,6 +3,8 @@ package com.fromzero.checkpoint.controllers;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -74,5 +76,18 @@ public class ColaboradorController {
         notificacaoRepository.save(notificacao);
 
         return notificacao;
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<?> logarColaborador(@RequestBody Colaborador c) {
+        Colaborador colaborador = repository.findByEmail(c.getEmail()).orElseThrow(
+            () -> new RuntimeException("Colaborador não encontrado")
+        );
+
+         if (colaborador.getSenhaHash().equals(c.getSenhaHash())) {
+             return ResponseEntity.ok(colaborador);
+         } else {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Senha inválida");
+         }
     }
 }
