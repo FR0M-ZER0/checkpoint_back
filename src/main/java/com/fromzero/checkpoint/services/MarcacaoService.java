@@ -10,11 +10,13 @@ import com.fromzero.checkpoint.entities.MarcacaoLog;
 import com.fromzero.checkpoint.repositories.MarcacaoLogRepository;
 import com.fromzero.checkpoint.repositories.MarcacaoRepository;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.List;
-import java.util.Optional;
+import java.time.format.TextStyle;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class MarcacaoService {
@@ -104,5 +106,108 @@ public class MarcacaoService {
             logger.warn("Tentativa de marcação duplicada para colaborador {} no mesmo dia.", novaMarcacao.getColaboradorId());
             throw new RuntimeException("Já existe uma marcação do mesmo tipo para este colaborador hoje.");
         }
+    }
+
+    // Calcular total de horas trabalhadas por mês
+    public Map<String, String> calcularHorasTrabalhadasPorMes(Long colaboradorId) {
+        List<Marcacao> marcacoes = marcacaoRepository.findByColaboradorIdAndDataHoraBetween(
+                colaboradorId,
+                LocalDate.of(2000, 1, 1).atStartOfDay(),
+                LocalDateTime.now()
+        );
+
+        Map<String, Duration> totalPorMes = new HashMap<>();
+
+        marcacoes.stream()
+                .collect(Collectors.groupingBy(m -> m.getDataHora().toLocalDate()))
+                .forEach((data, listaDoDia) -> {
+                    listaDoDia.sort(Comparator.comparing(Marcacao::getDataHora));
+
+                    Duration totalDia = Duration.ZERO;
+                    LocalDateTime entrada = null;
+                    LocalDateTime pausa = null;
+
+                    for (Marcacao m : listaDoDia) {
+                        switch (m.getTipo()) {
+                            case ENTRADA:
+                                entrada = m.getDataHora();
+                                break;
+                            case PAUSA:
+                                if (entrada != null) {
+                                    totalDia = totalDia.plus(Duration.between(entrada, m.getDataHora()));
+                                    entrada = null;
+                                    pausa = m.getDataHora();
+                                }
+                                break;
+                            case RETOMADA:
+                                pausa = m.getDataHora();
+                                break;
+                            case SAIDA:
+                                if (pausa != null) {
+                                    totalDia = totalDia.plus(Duration.between(pausa, m.getDataHora()));
+                                    pausa = null;
+                                }
+                                break;
+                        }
+                    }
+
+                    String mesAno = data.getMonth().getDisplayName(TextStyle.FULL, new Locale("pt", "BR")) + "/" + data.getYear();
+                    totalPorMes.put(mesAno, totalPorMes.getOrDefault(mesAno, Duration.ZERO).plus(totalDia));
+                });
+
+        // Converter Duration para string legível
+        Map<String, String> resultado = new LinkedHashMap<>();
+        totalPorMes.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .forEach(entry -> {
+                    long horas = entry.getValue().toHours();
+                    long minutos = entry.getValue().toMinutes() % 60;
+                    resultado.put(entry.getKey(), String.format("%dh%02dm", horas, minutos));
+                });
+
+        return resultado;
+    }
+
+    // Calcular total de horas trabalhadas no dia atual
+    public Duration calcularHorasTrabalhadasHoje(Long colaboradorId) {
+        LocalDate hoje = LocalDate.now();
+        LocalDateTime inicio = hoje.atStartOfDay();
+        LocalDateTime fim = hoje.atTime(LocalTime.MAX);
+
+        List<Marcacao> marcacoes = marcacaoRepository.findByColaboradorIdAndDataHoraBetween(colaboradorId, inicio, fim);
+
+        marcacoes = marcacoes.stream()
+                .sorted(Comparator.comparing(Marcacao::getDataHora))
+                .collect(Collectors.toList());
+
+        Duration total = Duration.ZERO;
+        LocalDateTime entrada = null;
+        LocalDateTime pausa = null;
+
+        for (Marcacao m : marcacoes) {
+            switch (m.getTipo()) {
+                case ENTRADA:
+                    entrada = m.getDataHora();
+                    break;
+                case PAUSA:
+                    if (entrada != null) {
+                        total = total.plus(Duration.between(entrada, m.getDataHora()));
+                        entrada = null;
+                        pausa = m.getDataHora();
+                    }
+                    break;
+                case RETOMADA:
+                    pausa = m.getDataHora();
+                    break;
+                case SAIDA:
+                    if (pausa != null) {
+                        total = total.plus(Duration.between(pausa, m.getDataHora()));
+                        pausa = null;
+                    }
+                    break;
+            }
+        }
+
+        return total;
     }
 }
