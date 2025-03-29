@@ -1,4 +1,4 @@
-package com.fromzero.checkpoint.models;
+package com.fromzero.checkpoint.entities;
 
 import jakarta.persistence.*;
 import lombok.Data;
@@ -7,8 +7,10 @@ import lombok.AllArgsConstructor;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 @Entity
-@Table(name = "solicitacao_folga")
+@Table(name = "Solicitacao_folga")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -20,6 +22,7 @@ public class SolicitacaoFolga {
     private Integer solFolId;
 
     @Column(name = "sol_fol_data", nullable = false)
+    @JsonFormat(pattern = "dd/MM/yyyy")
     private LocalDate solFolData;
 
     @Column(name = "sol_fol_observacao")
@@ -29,7 +32,7 @@ public class SolicitacaoFolga {
     private String solFolStatus;
 
     @Column(name = "colaborador_id", nullable = false)
-    private Integer colaboradorId;
+    private Long colaboradorId;
 
     @Column(name = "criado_em", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
     private LocalDateTime criadoEm;
@@ -37,5 +40,6 @@ public class SolicitacaoFolga {
     @Column(name = "sol_fol_saldo_gasto", nullable = false)
     private String solFolSaldoGasto; // Adicione este campo
 
-    // ... getters, setters, etc.
+    // Getters e Setters (se você não estiver usando Lombok)
+
 }

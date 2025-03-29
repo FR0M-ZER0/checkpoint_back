@@ -1,4 +1,4 @@
-package com.fromzero.checkpoint.models;
+package com.fromzero.checkpoint.entities;
 
 import jakarta.persistence.*;
 import lombok.Data;
@@ -8,32 +8,34 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "folga")
+@Table(name = "solicitacao_abono_ferias")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Folga {
+public class SolicitacaoAbonoFerias {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private Integer id;
-
-    @Column(name = "data", nullable = false)
-    private LocalDate data;
+    private Long id;  // Alterado para Long
 
     @Column(name = "colaborador_id", nullable = false)
-    private Integer colaboradorId;
+    private Long colaboradorId;  // Alterado para Long
 
-    @Column(name = "saldo_gasto", nullable = false)
-    private String saldoGasto;
+    @Column(name = "dias_vendidos", nullable = false)
+    private Integer diasVendidos;
+
+    @Column(name = "data_solicitacao", nullable = false)
+    private LocalDate dataSolicitacao;
+
+    @Column(name = "status", nullable = false)
+    private String status;
 
     @Column(name = "criado_em", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
     private LocalDateTime criadoEm;
 
-    @ManyToOne
+    // Relacionamento muitos-para-um (opcional)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "colaborador_id", insertable = false, updatable = false)
     private Colaborador colaborador;
-
-
 }

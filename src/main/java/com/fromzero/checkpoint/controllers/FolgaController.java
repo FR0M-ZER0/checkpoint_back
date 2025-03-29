@@ -1,8 +1,10 @@
+package com.fromzero.checkpoint.controllers;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.fromzero.checkpoint.services.FolgaService;
-import com.fromzero.checkpoint.models.SolicitacaoFolga;
+import com.fromzero.checkpoint.entities.SolicitacaoFolga;
 
 @RestController
 @RequestMapping("/api/folga")
@@ -13,7 +15,7 @@ public class FolgaController {
     private FolgaService folgaService;
 
     @GetMapping("/saldo")
-    public ResponseEntity<String> getSaldoHoras(@RequestParam Integer colaboradorId) {
+    public ResponseEntity<String> getSaldoHoras(@RequestParam Long colaboradorId) {
         try {
             String saldo = folgaService.obterSaldoHoras(colaboradorId);
             return ResponseEntity.ok(saldo);

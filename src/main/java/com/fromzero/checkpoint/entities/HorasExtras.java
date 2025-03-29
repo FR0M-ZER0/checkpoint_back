@@ -18,14 +18,14 @@ public class HorasExtras {
     @Column(name = "ext_id")
     private Integer extId;
 
-    @Column(name = "ext_saldo", nullable = false)
-    private String extSaldo;
+    @Column(name = "ext_saldo")
+    private String saldo;
 
     @Column(name = "ext_status", nullable = false)
     private String extStatus;
 
-    @Column(name = "colaborador_id", nullable = false)
-    private Integer colaboradorId;
+    @Column(name = "colaborador_id")
+    private Long colaboradorId;
 
     @Column(name = "criado_em", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
     private LocalDateTime criadoEm;
