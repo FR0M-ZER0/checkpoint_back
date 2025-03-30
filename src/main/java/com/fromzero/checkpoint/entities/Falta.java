@@ -1,22 +1,18 @@
 package com.fromzero.checkpoint.entities;
 
+import jakarta.persistence.*;
+import lombok.Data;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrePersist;
-import lombok.Data;
-
-@Entity
 @Data
+@Entity
+@Table(name = "faltas")
 public class Falta {
+    public enum TipoFalta {
+        ATRASO, AUSENCIA
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -24,20 +20,30 @@ public class Falta {
     @Column
     private LocalDateTime criadoEm;
 
+    @Column
+    private LocalDate data;
+
+    @Column
+    private String justificativa;
+
     @ManyToOne
-    @JoinColumn(nullable = false)
+    @JoinColumn(name = "colaborador_id", nullable = false)
     private Colaborador colaborador;
 
-    public enum TipoFalta {
-        Atraso,
-        Ausencia
-    }
+    @ManyToOne
+    @JoinColumn(name = "jornada_id")
+    private Jornada jornada;
 
     @Enumerated(EnumType.STRING)
     private TipoFalta tipo;
 
     @PrePersist
     public void prePersist() {
-        if (this.criadoEm == null) this.criadoEm = LocalDateTime.now();
+        if (this.criadoEm == null) {
+            this.criadoEm = LocalDateTime.now();
+        }
+        if (this.data == null && this.criadoEm != null) {
+            this.data = this.criadoEm.toLocalDate();
+        }
     }
 }

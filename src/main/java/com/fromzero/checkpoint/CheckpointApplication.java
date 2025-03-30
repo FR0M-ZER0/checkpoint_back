@@ -2,9 +2,11 @@ package com.fromzero.checkpoint;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling; 
 
 import io.github.cdimascio.dotenv.Dotenv;
 
+@EnableScheduling
 @SpringBootApplication
 public class CheckpointApplication {
 	static {
