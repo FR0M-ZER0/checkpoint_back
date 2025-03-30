@@ -9,7 +9,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.fromzero.checkpoint.entities.Resposta;
 import com.fromzero.checkpoint.entities.Colaborador;
-import com.fromzero.checkpoint.entities.Gestor;
 import com.fromzero.checkpoint.entities.Resposta.TipoResposta;
 import com.fromzero.checkpoint.repositories.RespostaRepository;
 
@@ -39,14 +38,5 @@ public class RespostaService {
 
     public List<Resposta> buscarRespostasNaoLidas(Long colaboradorId) {
         return respostaRepository.findByColaboradorIdAndLidaFalse(colaboradorId);
-    }
-
-    @Transactional
-    public void marcarComoLida(Long respostaId) {
-        Resposta resposta = respostaRepository.findById(respostaId).orElseThrow(() -> 
-            new RuntimeException("Resposta não encontrada")
-        );
-        resposta.setLida(true);
-        respostaRepository.save(resposta);
     }
 }

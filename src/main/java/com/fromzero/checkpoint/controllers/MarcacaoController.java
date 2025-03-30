@@ -6,6 +6,7 @@ import com.fromzero.checkpoint.entities.Colaborador;
 import com.fromzero.checkpoint.entities.Marcacao;
 import com.fromzero.checkpoint.entities.Resposta.TipoResposta;
 import com.fromzero.checkpoint.repositories.ColaboradorRepository;
+import com.fromzero.checkpoint.repositories.MarcacaoRepository;
 import com.fromzero.checkpoint.repositories.RespostaRepository;
 import com.fromzero.checkpoint.services.MarcacaoService;
 import com.fromzero.checkpoint.services.RespostaService;
@@ -32,6 +33,9 @@ public class MarcacaoController {
 
     @Autowired
     private RespostaService respostaService;
+
+    @Autowired
+    private MarcacaoRepository repository;
 
     @Autowired
     private ColaboradorRepository colaboradorRepository;
@@ -80,6 +84,13 @@ public class MarcacaoController {
     // Deletar marcação
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletarMarcacao(@PathVariable String id) {
+        Marcacao m = repository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Marcação não encontrado"));
+
+        Colaborador colaborador = colaboradorRepository.findById(m.getColaboradorId())
+            .orElseThrow(() -> new RuntimeException("Colaborador não encontrado"));
+
+        respostaService.criarResposta("O horário do seu ponto foi excluído", TipoResposta.ponto, colaborador);
         marcacaoService.deletarMarcacao(id);
         return ResponseEntity.noContent().build();
     }
