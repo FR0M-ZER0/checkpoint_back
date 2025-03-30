@@ -1,6 +1,22 @@
 package com.fromzero.checkpoint.entities;
 
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.PrePersist;
+
 import jakarta.persistence.*;
+
 import lombok.Data;
 import java.time.LocalDateTime;
 
@@ -9,7 +25,7 @@ import java.time.LocalDateTime;
 @Data
 public class Colaborador {
     @Id
-    @Column(name = "col_id")
+    @Column()
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
@@ -24,6 +40,12 @@ public class Colaborador {
 
     @Column(name = "col_ativo")
     private Boolean ativo = true;
+
+
+    @OneToMany(mappedBy = "colaborador", cascade = CascadeType.ALL)
+    @JsonIgnore
+    private List<Resposta> respostas;
+
 
     @Column(name = "criado_em")
     private LocalDateTime criadoEm;

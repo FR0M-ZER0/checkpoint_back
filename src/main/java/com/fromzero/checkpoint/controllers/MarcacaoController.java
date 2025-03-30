@@ -1,8 +1,15 @@
 package com.fromzero.checkpoint.controllers;
 
+import com.fromzero.checkpoint.dto.AtualizarHorarioMarcacaoDTO;
 import com.fromzero.checkpoint.dto.MarcacaoDTO;
+import com.fromzero.checkpoint.entities.Colaborador;
 import com.fromzero.checkpoint.entities.Marcacao;
+import com.fromzero.checkpoint.entities.Resposta.TipoResposta;
+import com.fromzero.checkpoint.repositories.ColaboradorRepository;
+import com.fromzero.checkpoint.repositories.MarcacaoRepository;
+import com.fromzero.checkpoint.repositories.RespostaRepository;
 import com.fromzero.checkpoint.services.MarcacaoService;
+import com.fromzero.checkpoint.services.RespostaService;
 
 import jakarta.validation.Valid;
 
@@ -20,6 +27,18 @@ public class MarcacaoController {
 
     @Autowired
     private MarcacaoService marcacaoService;
+
+    @Autowired
+    private RespostaRepository respostaRepository;
+
+    @Autowired
+    private RespostaService respostaService;
+
+    @Autowired
+    private MarcacaoRepository repository;
+
+    @Autowired
+    private ColaboradorRepository colaboradorRepository;
 
     // Listar todas as marcações
     @GetMapping()
@@ -65,6 +84,13 @@ public class MarcacaoController {
     // Deletar marcação
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletarMarcacao(@PathVariable String id) {
+        Marcacao m = repository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Marcação não encontrado"));
+
+        Colaborador colaborador = colaboradorRepository.findById(m.getColaboradorId())
+            .orElseThrow(() -> new RuntimeException("Colaborador não encontrado"));
+
+        respostaService.criarResposta("O horário do seu ponto foi excluído", TipoResposta.ponto, colaborador);
         marcacaoService.deletarMarcacao(id);
         return ResponseEntity.noContent().build();
     }
@@ -87,5 +113,20 @@ public class MarcacaoController {
             @PathVariable Long colaboradorId, 
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data) {
         return marcacaoService.obterMarcacoesPorData(colaboradorId, data);
+    }
+
+    // Atualiza somente o horário
+    @PutMapping("/{id}/horario")
+    public ResponseEntity<Marcacao> atualizarHorarioMarcacao(
+            @PathVariable String id,
+            @Valid @RequestBody AtualizarHorarioMarcacaoDTO dto) {
+
+        Marcacao marcacaoAtualizada = marcacaoService.atualizarHorarioMarcacao(id, dto.getNovoHorario());
+
+        Colaborador colaborador = colaboradorRepository.findById(marcacaoAtualizada.getColaboradorId())
+                .orElseThrow(() -> new RuntimeException("Colaborador não encontrado"));
+        
+                respostaService.criarResposta("O horário do seu ponto foi ajustado", TipoResposta.ponto, colaborador);
+        return ResponseEntity.ok(marcacaoAtualizada);
     }
 }
