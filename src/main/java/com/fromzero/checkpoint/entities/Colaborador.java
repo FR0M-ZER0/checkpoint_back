@@ -6,15 +6,6 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.PrePersist;
-
 import jakarta.persistence.*;
 
 import lombok.Data;
@@ -25,8 +16,8 @@ import java.time.LocalDateTime;
 @Data
 public class Colaborador {
     @Id
-    @Column()
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "col_id")
     private Long id;
 
     @Column(name = "col_nome")
