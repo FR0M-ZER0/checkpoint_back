@@ -92,7 +92,7 @@ public class ColaboradorController {
         return respostaService.buscarRespostasNaoLidas(id);
     }
 
-    @PutMapping("/colaborador/notificacao/{respostaId}")
+    @PutMapping("/colaborador/resposta/{respostaId}")
     public Resposta marcarRespostaComoLida(@PathVariable Long respostaId) {
         Resposta resposta = respostaRepository.findById(respostaId)
             .orElseThrow(() -> new RuntimeException("Resposta não encontrada"));
