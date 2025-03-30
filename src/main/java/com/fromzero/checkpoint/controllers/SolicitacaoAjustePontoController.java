@@ -61,7 +61,7 @@ public class SolicitacaoAjustePontoController {
     }
 
     @PutMapping("/solicitacao/{id}")
-    public ResponseEntity<SolicitacaoAjustePonto> update(@PathVariable String id, @RequestBody SolicitacaoAjustePonto updatedSolicitacao) {
+    public ResponseEntity<SolicitacaoAjustePonto> responderSolicitacao(@PathVariable String id, @RequestBody SolicitacaoAjustePonto updatedSolicitacao) {
         Optional<SolicitacaoAjustePonto> optionalSolicitacao = repository.findById(id);
 
         if (optionalSolicitacao.isEmpty()) {
@@ -69,13 +69,7 @@ public class SolicitacaoAjustePontoController {
         }
 
         SolicitacaoAjustePonto existingSolicitacao = optionalSolicitacao.get();
-
-        existingSolicitacao.setMarcacaoId(updatedSolicitacao.getMarcacaoId());
-        existingSolicitacao.setPeriodo(updatedSolicitacao.getPeriodo());
-        existingSolicitacao.setTipo(updatedSolicitacao.getTipo());
         existingSolicitacao.setStatus(updatedSolicitacao.getStatus());
-        existingSolicitacao.setObservacao(updatedSolicitacao.getObservacao());
-        existingSolicitacao.setHorario(updatedSolicitacao.getHorario());
 
         SolicitacaoAjustePonto savedSolicitacao = repository.save(existingSolicitacao);
         return new ResponseEntity<>(savedSolicitacao, HttpStatus.OK);
