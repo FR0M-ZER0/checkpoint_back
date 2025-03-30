@@ -4,7 +4,7 @@ package com.fromzero.checkpoint.entities;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnore; // Adicione o caminho correto!
 
 import jakarta.persistence.*;
 
