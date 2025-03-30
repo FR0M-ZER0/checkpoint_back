@@ -1,8 +1,13 @@
 package com.fromzero.checkpoint.controllers;
 
+import com.fromzero.checkpoint.dto.AtualizarHorarioMarcacaoDTO;
 import com.fromzero.checkpoint.dto.MarcacaoDTO;
+import com.fromzero.checkpoint.entities.Colaborador;
 import com.fromzero.checkpoint.entities.Marcacao;
+import com.fromzero.checkpoint.entities.Notificacao.NotificacaoTipo;
+import com.fromzero.checkpoint.repositories.ColaboradorRepository;
 import com.fromzero.checkpoint.services.MarcacaoService;
+import com.fromzero.checkpoint.services.NotificacaoService;
 
 import jakarta.validation.Valid;
 
@@ -20,6 +25,12 @@ public class MarcacaoController {
 
     @Autowired
     private MarcacaoService marcacaoService;
+
+    @Autowired
+    private NotificacaoService notificacaoService;
+
+    @Autowired
+    private ColaboradorRepository colaboradorRepository;
 
     // Listar todas as marcações
     @GetMapping()
@@ -87,5 +98,20 @@ public class MarcacaoController {
             @PathVariable Long colaboradorId, 
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data) {
         return marcacaoService.obterMarcacoesPorData(colaboradorId, data);
+    }
+
+    // Atualiza somente o horário
+    @PutMapping("/{id}/horario")
+    public ResponseEntity<Marcacao> atualizarHorarioMarcacao(
+            @PathVariable String id,
+            @Valid @RequestBody AtualizarHorarioMarcacaoDTO dto) {
+
+        Marcacao marcacaoAtualizada = marcacaoService.atualizarHorarioMarcacao(id, dto.getNovoHorario());
+
+        Colaborador colaborador = colaboradorRepository.findById(marcacaoAtualizada.getColaboradorId())
+                .orElseThrow(() -> new RuntimeException("Colaborador não encontrado"));
+        
+        notificacaoService.criaNotificacao("O horário do seu ponto foi ajustado", NotificacaoTipo.ponto, colaborador);
+        return ResponseEntity.ok(marcacaoAtualizada);
     }
 }

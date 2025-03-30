@@ -129,4 +129,23 @@ public class MarcacaoService {
 
         return marcacaoRepository.findByColaboradorIdAndDataHoraBetween(colaboradorId, inicioDoDia, fimDoDia);
     }
+
+    // Atualizar somente o horário de uma marcação
+    public Marcacao atualizarHorarioMarcacao(String id, LocalTime novoHorario) {
+        Marcacao marcacao = marcacaoRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Marcação não encontrada"));
+    
+        if (marcacao.isProcessada()) {
+            throw new RuntimeException("Não é possível alterar uma marcação processada.");
+        }
+    
+        LocalDateTime novaDataHora = marcacao.getDataHora()
+                .withHour(novoHorario.getHour())
+                .withMinute(novoHorario.getMinute())
+                .withSecond(0);
+    
+        marcacao.setDataHora(novaDataHora);
+        return marcacaoRepository.save(marcacao);
+    }
+    
 }
