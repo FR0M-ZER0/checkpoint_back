@@ -4,10 +4,11 @@ import com.fromzero.checkpoint.dto.AtualizarHorarioMarcacaoDTO;
 import com.fromzero.checkpoint.dto.MarcacaoDTO;
 import com.fromzero.checkpoint.entities.Colaborador;
 import com.fromzero.checkpoint.entities.Marcacao;
-import com.fromzero.checkpoint.entities.Notificacao.NotificacaoTipo;
+import com.fromzero.checkpoint.entities.Resposta.TipoResposta;
 import com.fromzero.checkpoint.repositories.ColaboradorRepository;
+import com.fromzero.checkpoint.repositories.RespostaRepository;
 import com.fromzero.checkpoint.services.MarcacaoService;
-import com.fromzero.checkpoint.services.NotificacaoService;
+import com.fromzero.checkpoint.services.RespostaService;
 
 import jakarta.validation.Valid;
 
@@ -27,7 +28,10 @@ public class MarcacaoController {
     private MarcacaoService marcacaoService;
 
     @Autowired
-    private NotificacaoService notificacaoService;
+    private RespostaRepository respostaRepository;
+
+    @Autowired
+    private RespostaService respostaService;
 
     @Autowired
     private ColaboradorRepository colaboradorRepository;
@@ -111,7 +115,7 @@ public class MarcacaoController {
         Colaborador colaborador = colaboradorRepository.findById(marcacaoAtualizada.getColaboradorId())
                 .orElseThrow(() -> new RuntimeException("Colaborador não encontrado"));
         
-        notificacaoService.criaNotificacao("O horário do seu ponto foi ajustado", NotificacaoTipo.ponto, colaborador);
+                respostaService.criarResposta("O horário do seu ponto foi ajustado", TipoResposta.ponto, colaborador);
         return ResponseEntity.ok(marcacaoAtualizada);
     }
 }

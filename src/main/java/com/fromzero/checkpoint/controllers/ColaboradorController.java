@@ -15,10 +15,13 @@ import org.springframework.web.bind.annotation.RestController;
 import com.fromzero.checkpoint.entities.Colaborador;
 import com.fromzero.checkpoint.entities.Falta;
 import com.fromzero.checkpoint.entities.Notificacao;
+import com.fromzero.checkpoint.entities.Resposta;
 import com.fromzero.checkpoint.repositories.ColaboradorRepository;
 import com.fromzero.checkpoint.repositories.FaltaRepository;
 import com.fromzero.checkpoint.repositories.NotificacaoRepository;
+import com.fromzero.checkpoint.repositories.RespostaRepository;
 import com.fromzero.checkpoint.services.NotificacaoService;
+import com.fromzero.checkpoint.services.RespostaService;
 
 
 
@@ -35,6 +38,12 @@ public class ColaboradorController {
 
     @Autowired
     private NotificacaoService notificacaoService;
+
+    @Autowired
+    private RespostaService respostaService;
+
+    @Autowired
+    private RespostaRepository respostaRepository;
 
     @PostMapping("/colaborador")
     public Colaborador cadastrarColaborador(@RequestBody Colaborador c) {
@@ -76,6 +85,22 @@ public class ColaboradorController {
         notificacaoRepository.save(notificacao);
 
         return notificacao;
+    }
+
+    @GetMapping("/colaborador/resposta/{id}")
+    public List<Resposta> obterRespostasNaoLidas(@PathVariable Long id) {
+        return respostaService.buscarRespostasNaoLidas(id);
+    }
+
+    @PutMapping("/colaborador/notificacao/{respostaId}")
+    public Resposta marcarRespostaComoLida(@PathVariable Long respostaId) {
+        Resposta resposta = respostaRepository.findById(respostaId)
+            .orElseThrow(() -> new RuntimeException("Resposta não encontrada"));
+
+        resposta.setLida(true);
+        respostaRepository.save(resposta);
+
+        return resposta;
     }
 
     @PostMapping("/login")
