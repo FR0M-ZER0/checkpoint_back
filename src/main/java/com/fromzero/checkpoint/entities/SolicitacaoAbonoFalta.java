@@ -10,18 +10,22 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
 import lombok.Data;
 
 @Entity
+@Table(name = "solicitacao_abono_falta")
 @Data
 public class SolicitacaoAbonoFalta {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "sol_abo_id")
     private Long id;
     
-    @Column
+    @Column(name = "sol_abo_motivo")
     private String motivo;
     
     public enum SolicitacaoStatus {
@@ -31,18 +35,20 @@ public class SolicitacaoAbonoFalta {
     }
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "sol_abo_status")
     private SolicitacaoStatus status;
 
-    @Column
+    @Column(name = "sol_abo_justificativa")
     private String justificativa;
 
-    @Column
+    @Column(name = "sol_abo_arquivo_caminho")
     private String arquivoCaminho;
 
     @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "falta_id", nullable = false)
     private Falta falta;
 
-    @Column
+    @Column(name = "criado_em")
     private LocalDateTime criadoEm;
 
     @PrePersist
