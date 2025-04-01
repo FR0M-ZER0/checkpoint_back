@@ -9,10 +9,12 @@ import com.fromzero.checkpoint.repositories.FeriasRepository;
 import com.fromzero.checkpoint.repositories.FolgaRepository;
 import com.fromzero.checkpoint.repositories.MarcacaoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -118,5 +120,52 @@ public class DiasTrabalhoController {
         resumo.put("totalHorasTrabalhadas", totalHorasTrabalhadas);
 
         return resumo;
+    }
+
+    @GetMapping("/{colaboradorId}/{data}")
+    public ResponseEntity<Map<String, Object>> getDiaTrabalho(@PathVariable Long colaboradorId, @PathVariable String data) {
+        LocalDate date = LocalDate.parse(data);
+        Map<String, Object> response = new HashMap<>();
+
+        boolean estaDeFerias = feriasRepository.findByColaboradorId(colaboradorId)
+                .stream()
+                .anyMatch(f -> !date.isBefore(f.getDataInicio()) && !date.isAfter(f.getDataFim()));
+        if (estaDeFerias) {
+            response.put("tipo", "ferias");
+            return ResponseEntity.ok(response);
+        }
+
+        boolean estaDeFolga = folgaRepository.findByColaboradorId(colaboradorId)
+                .stream()
+                .anyMatch(f -> f.getData().equals(date));
+        if (estaDeFolga) {
+            response.put("tipo", "folga");
+            return ResponseEntity.ok(response);
+        }
+
+        Falta falta = faltaRepository.findByColaboradorId(colaboradorId)
+                .stream()
+                .filter(f -> f.getCriadoEm().toLocalDate().equals(date))
+                .findFirst()
+                .orElse(null);
+        if (falta != null) {
+            response.put("tipo", "falta");
+            response.put("detalhes", Map.of("tipoFalta", falta.getTipo().name()));
+            return ResponseEntity.ok(response);
+        }
+
+        List<Marcacao> marcacoes = marcacaoRepository.findByColaboradorId(colaboradorId)
+                .stream()
+                .filter(m -> m.getDataHora().toLocalDate().equals(date))
+                .collect(Collectors.toList());
+
+        if (marcacoes.size() == 4) {
+            response.put("tipo", "normal");
+            response.put("marcacoes", marcacoes);
+            return ResponseEntity.ok(response);
+        }
+
+        response.put("tipo", "desconhecido");
+        return ResponseEntity.ok(response);
     }
 }

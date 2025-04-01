@@ -13,4 +13,6 @@ public interface FaltaRepository extends JpaRepository<Falta, Long> {
     @Query("SELECT f FROM Falta f WHERE f.colaborador.id = :colaboradorId AND f.id NOT IN " +
        "(SELECT s.falta.id FROM SolicitacaoAbonoFalta s)")
     List<Falta> obterFaltasSemSolicitacao(Long colaboradorId);
+
+    Long countByColaboradorId(Long colaboradorId);
 }
