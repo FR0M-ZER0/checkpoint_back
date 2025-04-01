@@ -11,15 +11,16 @@ public class Ferias {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "fer_id")
     private Long id;
 
     @Column(name = "colaborador_id", nullable = false)
     private Long colaboradorId;
 
-    @Column(name = "data_inicio", nullable = false)
+    @Column(name = "fer_data_inicio", nullable = false)
     private LocalDate dataInicio; // Usando LocalDate ao invés de Date
 
-    @Column(name = "data_fim", nullable = false)
+    @Column(name = "fer_data_fim", nullable = false)
     private LocalDate dataFim;
 
     @Column(nullable = false)
