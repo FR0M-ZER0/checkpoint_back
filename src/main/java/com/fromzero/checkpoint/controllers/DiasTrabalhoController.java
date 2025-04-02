@@ -46,7 +46,7 @@ public class DiasTrabalhoController {
                 .collect(Collectors.groupingBy(m -> m.getDataHora().toLocalDate()));
 
         marcacoesPorDia.entrySet().stream()
-                .filter(entry -> entry.getValue().size() == 4)
+                .filter(entry -> !entry.getValue().isEmpty())
                 .forEach(entry -> diasTrabalho.put(entry.getKey(), "normal"));
 
         List<Falta> faltas = faltaRepository.findByColaboradorId(colaboradorId);
@@ -159,7 +159,7 @@ public class DiasTrabalhoController {
                 .filter(m -> m.getDataHora().toLocalDate().equals(date))
                 .collect(Collectors.toList());
 
-        if (marcacoes.size() == 4) {
+        if (!marcacoes.isEmpty()) {
             response.put("tipo", "normal");
             response.put("marcacoes", marcacoes);
             return ResponseEntity.ok(response);
