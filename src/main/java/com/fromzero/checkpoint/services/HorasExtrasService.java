@@ -1,18 +1,19 @@
 package com.fromzero.checkpoint.services;
 
+import com.fromzero.checkpoint.dto.HorasExtrasAcumuladasDTO;
+import com.fromzero.checkpoint.entities.Colaborador;
 import com.fromzero.checkpoint.entities.HorasExtras;
 import com.fromzero.checkpoint.entities.HorasExtras.Status;
+import com.fromzero.checkpoint.repositories.ColaboradorRepository;
 import com.fromzero.checkpoint.repositories.HorasExtrasRepository;
-import com.fromzero.checkpoint.dto.HorasExtrasDTO;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.Month;
 import java.util.List;
-import java.util.Locale;
 import java.util.stream.Collectors;
 
 @Service
@@ -20,55 +21,73 @@ public class HorasExtrasService {
 
     @Autowired
     private HorasExtrasRepository horasExtrasRepository;
+    
+    @Autowired
+    private ColaboradorRepository colaboradorRepository;
 
-    public List<HorasExtrasDTO> buscarSaldoMensalPorColaborador(Long colaboradorId) {
-        LocalDateTime agora = LocalDateTime.now();
-        int anoAtual = agora.getYear();
-        LocalDateTime julhoInicio = LocalDateTime.of(anoAtual, Month.JULY, 1, 0, 0);
-    
-        // Primeiro busca todas as horas extras aprovadas do colaborador
-        List<HorasExtras> todasHoras = horasExtrasRepository.findByColaboradorId(colaboradorId);
-    
-        // Filtra por status Aprovado
-        List<HorasExtras> aprovadas = todasHoras.stream()
-                .filter(h -> h.getStatus() == Status.Aprovado)
-                .toList();
-    
-        // Verifica se existe alguma aprovada a partir de julho
-        boolean existePosJulho = aprovadas.stream()
-                .anyMatch(h -> h.getCriadoEm().isAfter(julhoInicio) || h.getCriadoEm().isEqual(julhoInicio));
-    
-        // Filtra conforme a lógica
-        List<HorasExtras> filtradas = aprovadas.stream()
-                .filter(h -> {
-                    if (existePosJulho) {
-                        return h.getCriadoEm().isAfter(julhoInicio) || h.getCriadoEm().isEqual(julhoInicio);
-                    } else {
-                        return h.getCriadoEm().isBefore(julhoInicio);
-                    }
-                })
-                .toList();
-    
-        // Agrupa por mês e ano e soma as horas
-        return filtradas.stream()
-                .collect(Collectors.groupingBy(h -> h.getCriadoEm().getMonth()))
-                .entrySet().stream()
-                .map(entry -> {
-                    BigDecimal totalHoras = entry.getValue().stream()
-                            .map(h -> {
-                                try {
-                                    return new BigDecimal(h.getSaldo().replace("h", "").replace(",", "."));
-                                } catch (Exception e) {
-                                    return BigDecimal.ZERO;
-                                }
-                            })
-                            .reduce(BigDecimal.ZERO, BigDecimal::add);
-    
-                    String mesNome = entry.getKey().getDisplayName(java.time.format.TextStyle.FULL, Locale.forLanguageTag("pt-BR"));
-                    String mesAno = mesNome + "/" + anoAtual;
-    
-                    return new HorasExtrasDTO(mesAno, totalHoras);
+    public List<HorasExtrasAcumuladasDTO> buscarHorasExtrasAcumuladasPorColaborador() {
+        List<Colaborador> colaboradores = colaboradorRepository.findAll();
+        
+        return colaboradores.stream()
+                .map(colaborador -> {
+                    BigDecimal totalHoras = calcularTotalHorasExtrasAprovadas(colaborador.getId());
+                    return new HorasExtrasAcumuladasDTO(
+                            colaborador.getId(),
+                            colaborador.getNome(),
+                            totalHoras
+                    );
                 })
                 .collect(Collectors.toList());
-    }    
+    }
+
+    public List<HorasExtrasAcumuladasDTO> buscarHorasExtrasAcumuladasPorPeriodo(LocalDate dataInicio, LocalDate dataFim) {
+        List<Colaborador> colaboradores = colaboradorRepository.findAll();
+        
+        return colaboradores.stream()
+                .map(colaborador -> {
+                    BigDecimal totalHoras = calcularTotalHorasExtrasAprovadasPorPeriodo(
+                            colaborador.getId(), 
+                            dataInicio, 
+                            dataFim
+                    );
+                    return new HorasExtrasAcumuladasDTO(
+                            colaborador.getId(),
+                            colaborador.getNome(),
+                            totalHoras
+                    );
+                })
+                .collect(Collectors.toList());
+    }
+
+    private BigDecimal calcularTotalHorasExtrasAprovadas(Long colaboradorId) {
+        List<HorasExtras> horasExtras = horasExtrasRepository.findByColaboradorIdAndStatus(colaboradorId, Status.Aprovado);
+        
+        return horasExtras.stream()
+                .map(h -> converterSaldoParaBigDecimal(h.getSaldo()))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private BigDecimal calcularTotalHorasExtrasAprovadasPorPeriodo(Long colaboradorId, LocalDate dataInicio, LocalDate dataFim) {
+        LocalDateTime inicio = dataInicio.atStartOfDay();
+        LocalDateTime fim = dataFim.plusDays(1).atStartOfDay();
+        
+        List<HorasExtras> horasExtras = horasExtrasRepository.findByColaboradorIdAndStatusAndCriadoEmBetween(
+                colaboradorId, 
+                Status.Aprovado,
+                inicio,
+                fim
+        );
+        
+        return horasExtras.stream()
+                .map(h -> converterSaldoParaBigDecimal(h.getSaldo()))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private BigDecimal converterSaldoParaBigDecimal(String saldo) {
+        try {
+            return new BigDecimal(saldo.replace("h", "").replace(",", "."));
+        } catch (Exception e) {
+            return BigDecimal.ZERO;
+        }
+    }
 }
