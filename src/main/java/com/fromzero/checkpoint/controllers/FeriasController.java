@@ -12,6 +12,10 @@ import org.springframework.data.web.PageableDefault;
 
 import jakarta.persistence.EntityNotFoundException;
 
+import com.fromzero.checkpoint.entities.Colaborador;
+import com.fromzero.checkpoint.entities.Ferias;
+import com.fromzero.checkpoint.entities.Notificacao.NotificacaoTipo;
+import com.fromzero.checkpoint.repositories.FeriasRepository;
 // ***** IMPORTS CORRIGIDOS/ADICIONADOS *****
 import com.fromzero.checkpoint.entities.SolicitacaoAbonoFerias;
 import com.fromzero.checkpoint.entities.SolicitacaoFerias; // Precisa desta entidade!
@@ -28,6 +32,9 @@ public class FeriasController {
 
     @Autowired
     private FeriasService feriasService;
+
+    @Autowired
+    private FeriasRepository repository;
 
     @GetMapping("/saldo")
     public ResponseEntity<?> getSaldoFerias(@RequestParam Long colaboradorId) {
@@ -142,7 +149,9 @@ public class FeriasController {
             return ResponseEntity.internalServerError().body(errorResponse);
         }
     }
-    
 
-
+    @PostMapping
+    public Ferias createFerias(@RequestBody Ferias f) {
+        return repository.save(f);
+    }
 }

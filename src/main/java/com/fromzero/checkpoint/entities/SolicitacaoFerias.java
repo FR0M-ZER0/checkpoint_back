@@ -5,8 +5,11 @@ import lombok.Data;
 import java.time.LocalDate;
 import java.time.LocalDateTime; // Se for usar criadoEm
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 @Data
 @Entity
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 @Table(name = "solicitacao_ferias")
 public class SolicitacaoFerias {
 
@@ -38,7 +41,7 @@ public class SolicitacaoFerias {
     // Mude para EAGER se a Solução 1 do erro anterior foi escolhida,
     // ou mantenha LAZY/remova FetchType se estiver usando JOIN FETCH nos repositórios.
     // Vamos manter LAZY por enquanto, confiando no JOIN FETCH do findByIdWithColaborador.
-    @ManyToOne(fetch = FetchType.LAZY) 
+    @ManyToOne(fetch = FetchType.EAGER) 
     @JoinColumn(name = "colaborador_id", referencedColumnName = "col_id", insertable = false, updatable = false)
     private Colaborador colaborador;
 
