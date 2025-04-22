@@ -46,6 +46,9 @@ public class SolicitacaoAjustePonto {
 
     private LocalTime horario;
 
+    private String colaboradorId;
+    private String colaboradorNome;
+
     @CreatedDate
     private LocalDateTime criadoEm;
 }
