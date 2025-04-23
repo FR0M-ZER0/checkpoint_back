@@ -19,7 +19,7 @@ public class SolicitacaoFolga {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "sol_fol_id")
-    private Integer solFolId;
+    private Long solFolId;
 
     @Column(name = "sol_fol_data", nullable = false)
     @JsonFormat(pattern = "dd/MM/yyyy")
@@ -27,9 +27,14 @@ public class SolicitacaoFolga {
 
     @Column(name = "sol_fol_observacao")
     private String solFolObservacao;
-
+    
+    public enum Status {
+        Pendente,
+        Rejeitado,
+        Aceito
+    }
     @Column(name = "sol_fol_status", nullable = false)
-    private String solFolStatus;
+    private Status solFolStatus;
 
     @Column(name = "colaborador_id", nullable = false)
     private Long colaboradorId;
@@ -38,8 +43,14 @@ public class SolicitacaoFolga {
     private LocalDateTime criadoEm;
 
     @Column(name = "sol_fol_saldo_gasto", nullable = false)
-    private String solFolSaldoGasto; // Adicione este campo
-
-    // Getters e Setters (se você não estiver usando Lombok)
+    private String solFolSaldoGasto;
+    
+    @Column(name = "sol_fol_tipo")
+    private String solFolTipo;
+    
+    @PrePersist
+    public void prePersist() {
+        if (this.criadoEm == null) this.criadoEm = LocalDateTime.now();
+    }
 
 }
