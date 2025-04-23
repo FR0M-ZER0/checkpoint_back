@@ -1,6 +1,8 @@
 package com.fromzero.checkpoint.services;
 
+// ***** IMPORTS IMPORTANTES *****
 import com.fromzero.checkpoint.entities.*;
+// ******************************
 import com.fromzero.checkpoint.repositories.*;
 import jakarta.persistence.EntityNotFoundException;
 import org.slf4j.Logger;
@@ -13,11 +15,6 @@ import java.time.LocalDate;
 // ChronoUnit não é mais necessário em agendarFerias (solicitação)
 import java.util.List;
 import java.util.Objects;
-
-// ***** IMPORTS IMPORTANTES *****
-import com.fromzero.checkpoint.entities.SolicitacaoFerias;
-import com.fromzero.checkpoint.repositories.SolicitacaoFeriasRepository;
-// ******************************
 
 
 @Service
@@ -43,6 +40,14 @@ public class FeriasService {
     private static final int LIMITE_DIAS_VENDA_ANO = 10;
     private static final String STATUS_VENDA_APROVADA = "APROVADO";
 
+    public List<SolicitacaoFerias> buscarSolicitacoesPorStatus(String status) {
+        log.info("Buscando solicitações de férias com status: {}", status);
+        // ***** CHAMA O MÉTODO COM JOIN FETCH *****
+        List<SolicitacaoFerias> solicitacoes = solicitacaoFeriasRepository.findByStatusIgnoreCaseWithColaborador(status);
+        // ****************************************
+        log.info("Encontradas {} solicitações com colaborador.", solicitacoes.size());
+        return solicitacoes;
+    }
     // --- Método obterSaldoFerias (permanece igual) ---
     public Double obterSaldoFerias(Long colaboradorId) {
         log.info("Buscando saldo de férias para colaborador ID: {}", colaboradorId);
