@@ -10,6 +10,7 @@ import com.fromzero.checkpoint.services.FeriasService;
 import com.fromzero.checkpoint.entities.SolicitacaoAbonoFerias;
 import com.fromzero.checkpoint.entities.SolicitacaoFerias; // Precisa desta entidade!
 // Ferias não é mais necessário como tipo de retorno ou parâmetro para /agendar
+import java.util.List;
 // import com.fromzero.checkpoint.entities.Ferias;
 import java.util.Map;
 // *****************************************
@@ -83,5 +84,19 @@ public class FeriasController {
                           .body(Map.of("erro", "Erro interno ao processar solicitação de agendamento."));
         }
     }
+    @GetMapping("/solicitacoes")
+    public ResponseEntity<?> buscarSolicitacoes(
+            @RequestParam(required = false, defaultValue = "PENDENTE") String status) {
+        try {
+            // Chama o novo método do service
+            List<SolicitacaoFerias> solicitacoes = feriasService.buscarSolicitacoesPorStatus(status); 
+            return ResponseEntity.ok(solicitacoes);
+        } catch (Exception e) {
+            // log.error("Erro ao buscar solicitações de férias", e); // É bom logar o erro real
+            Map<String, String> errorResponse = Map.of("erro", "Erro interno ao buscar solicitações de férias.");
+            return ResponseEntity.internalServerError().body(errorResponse);
+        }
+    }
+
 
 }
