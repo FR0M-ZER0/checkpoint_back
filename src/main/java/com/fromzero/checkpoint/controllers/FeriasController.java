@@ -6,6 +6,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.fromzero.checkpoint.services.FeriasService;
 
+import jakarta.persistence.EntityNotFoundException;
+
 // ***** IMPORTS CORRIGIDOS/ADICIONADOS *****
 import com.fromzero.checkpoint.entities.SolicitacaoAbonoFerias;
 import com.fromzero.checkpoint.entities.SolicitacaoFerias; // Precisa desta entidade!
@@ -43,6 +45,29 @@ public class FeriasController {
             // log.error("Erro inesperado ao buscar saldo", e);
             return ResponseEntity.internalServerError()
                          .body(Map.of("erro", "Erro interno ao processar requisição de saldo."));
+        }
+    }
+
+    @PutMapping("/solicitacoes/{id}/rejeitar")
+    public ResponseEntity<?> rejeitarSolicitacao(
+            @PathVariable Long id, // Pega o ID da URL
+            @RequestBody(required = false) Map<String, String> body // Recebe o corpo (comentario)
+    ) {
+        try {
+            String comentario = (body != null) ? body.get("comentarioGestor") : null;
+
+            // Chama o método do service para rejeitar
+            // Idealmente, o service retorna a solicitação atualizada
+            SolicitacaoFerias solicitacaoRejeitada = feriasService.rejeitarSolicitacao(id, comentario);
+            return ResponseEntity.ok(solicitacaoRejeitada); // Retorna 200 OK com a solicitação atualizada
+
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("erro", e.getMessage()));
+        } catch (IllegalArgumentException e) { // Ex: Comentário obrigatório não fornecido
+                return ResponseEntity.badRequest().body(Map.of("erro", e.getMessage()));
+        } catch (Exception e) {
+            // log.error("Erro ao rejeitar solicitação {}", id, e);
+                return ResponseEntity.internalServerError().body(Map.of("erro", "Erro interno ao rejeitar solicitação."));
         }
     }
 
@@ -97,6 +122,7 @@ public class FeriasController {
             return ResponseEntity.internalServerError().body(errorResponse);
         }
     }
+    
 
 
 }

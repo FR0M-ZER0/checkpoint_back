@@ -29,7 +29,7 @@ public class SolicitacaoFerias {
     @Column(name = "colaborador_id", nullable = false)
     private Long colaboradorId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "colaborador_id", referencedColumnName = "col_id", insertable = false, updatable = false)
     private Colaborador colaborador;
 

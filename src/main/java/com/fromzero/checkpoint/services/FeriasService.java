@@ -15,6 +15,7 @@ import java.time.LocalDate;
 // ChronoUnit não é mais necessário em agendarFerias (solicitação)
 import java.util.List;
 import java.util.Objects;
+import java.time.temporal.ChronoUnit;
 
 
 @Service
@@ -154,4 +155,80 @@ public class FeriasService {
         log.info("Solicitação de férias salva com sucesso: {}", solicitacaoSalva);
         return solicitacaoSalva; // <-- RETORNA O OBJETO CORRETO
     }
+    @Transactional
+    public SolicitacaoFerias rejeitarSolicitacao(Long solicitacaoId, String comentario) {
+        log.info("Rejeitando solicitação de férias ID: {} com comentário: {}", solicitacaoId, comentario);
+
+        // Busca a solicitação ou lança EntityNotFoundException
+        SolicitacaoFerias solicitacao = solicitacaoFeriasRepository.findById(solicitacaoId)
+                .orElseThrow(() -> new EntityNotFoundException("Solicitação de férias com ID " + solicitacaoId + " não encontrada."));
+
+        // Validação de regra de negócio (opcional, mas bom ter)
+        if (!"PENDENTE".equalsIgnoreCase(solicitacao.getStatus())) {
+             throw new IllegalStateException("Só é possível rejeitar solicitações com status PENDENTE.");
+        }
+         // Valida comentário se for obrigatório para rejeição
+         if (comentario == null || comentario.trim().isEmpty()) {
+             // Poderia lançar exceção ou apenas logar dependendo da regra
+             // throw new IllegalArgumentException("Comentário é obrigatório para rejeitar.");
+             log.warn("Rejeitando solicitação {} sem comentário.", solicitacaoId);
+         }
+
+
+        // Atualiza o status
+        solicitacao.setStatus("REJEITADO"); // Use a string exata do seu status
+        // TODO: Salvar o comentário do gestor, se houver um campo na entidade SolicitacaoFerias
+        // Ex: solicitacao.setComentarioGestor(comentario);
+
+        // Salva a solicitação atualizada
+        SolicitacaoFerias solicitacaoSalva = solicitacaoFeriasRepository.save(solicitacao);
+        log.info("Solicitação ID {} rejeitada com sucesso.", solicitacaoId);
+
+        // NÃO HÁ ALTERAÇÃO DE SALDO AQUI
+
+        // TODO: Enviar notificação para o colaborador?
+
+        return solicitacaoSalva;
+    }
+
+     // --- NOVO MÉTODO PARA APROVAR (PRECISA SER IMPLEMENTADO) ---
+     @Transactional
+     public SolicitacaoFerias aprovarSolicitacao(Long solicitacaoId, String comentario) {
+         log.info("Aprovando solicitação de férias ID: {} com comentário: {}", solicitacaoId, comentario);
+
+         SolicitacaoFerias solicitacao = solicitacaoFeriasRepository.findById(solicitacaoId)
+                 .orElseThrow(() -> new EntityNotFoundException("Solicitação de férias com ID " + solicitacaoId + " não encontrada."));
+
+         if (!"PENDENTE".equalsIgnoreCase(solicitacao.getStatus())) {
+              throw new IllegalStateException("Só é possível aprovar solicitações com status PENDENTE.");
+         }
+
+         Colaborador colaborador = colaboradorRepository.findById(solicitacao.getColaboradorId())
+                 .orElseThrow(() -> new EntityNotFoundException("Colaborador com ID " + solicitacao.getColaboradorId() + " não encontrado para aprovar férias."));
+
+         // Calcula dias (importar ChronoUnit)
+         long diasSolicitados = ChronoUnit.DAYS.between(solicitacao.getDataInicio(), solicitacao.getDataFim()) + 1;
+
+         // *** VERIFICA E ATUALIZA SALDO ***
+         if (colaborador.getSaldoFerias() == null || colaborador.getSaldoFerias() < diasSolicitados) {
+             log.warn("Saldo insuficiente para aprovar solicitação {}. Saldo: {}, Dias: {}", solicitacaoId, colaborador.getSaldoFerias(), diasSolicitados);
+             throw new IllegalStateException("Saldo de férias insuficiente ("+ colaborador.getSaldoFerias() + ") para aprovar " + diasSolicitados + " dias.");
+         }
+         Double novoSaldo = colaborador.getSaldoFerias() - diasSolicitados;
+         colaborador.setSaldoFerias(novoSaldo);
+         colaboradorRepository.save(colaborador);
+         log.info("Saldo do colaborador ID {} atualizado para: {} após aprovação.", colaborador.getId(), novoSaldo);
+         // *******************************
+
+         solicitacao.setStatus("APROVADO");
+         // TODO: Salvar comentário do gestor
+         // solicitacao.setComentarioGestor(comentario);
+
+         SolicitacaoFerias solicitacaoSalva = solicitacaoFeriasRepository.save(solicitacao);
+         log.info("Solicitação ID {} aprovada com sucesso.", solicitacaoId);
+
+         // TODO: Criar registro na tabela Ferias? Enviar notificação?
+
+         return solicitacaoSalva;
+     }
 }
