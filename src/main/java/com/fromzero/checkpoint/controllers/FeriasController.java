@@ -1,10 +1,14 @@
 package com.fromzero.checkpoint.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.fromzero.checkpoint.services.FeriasService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 
 import jakarta.persistence.EntityNotFoundException;
 
@@ -36,8 +40,7 @@ public class FeriasController {
             Double saldo = feriasService.obterSaldoFerias(colaboradorId);
             return ResponseEntity.ok(saldo);
 
-        } catch (RuntimeException e) { // Captura EntityNotFound ou IllegalState do service
-            // Retorna 404 ou 400 dependendo do erro, com mensagem JSON
+        } catch (RuntimeException e) {
             HttpStatus status = (e instanceof jakarta.persistence.EntityNotFoundException) ? HttpStatus.NOT_FOUND : HttpStatus.BAD_REQUEST;
              return ResponseEntity.status(status).body(Map.of("erro", e.getMessage()));
         } catch (Exception e) {
@@ -111,14 +114,31 @@ public class FeriasController {
     }
     @GetMapping("/solicitacoes")
     public ResponseEntity<?> buscarSolicitacoes(
-            @RequestParam(required = false, defaultValue = "PENDENTE") String status) {
+            @RequestParam(required = false, defaultValue = "PENDENTE") String status,
+            // ***** 1. ADICIONA Pageable COMO PARÂMETRO *****
+            // O Spring vai preencher isso com ?page=X&size=Y&sort=Z da URL
+            // @PageableDefault define valores padrão se não vierem na URL
+            @PageableDefault(size = 12, sort = "id") Pageable pageable 
+    ) {
         try {
-            // Chama o novo método do service
-            List<SolicitacaoFerias> solicitacoes = feriasService.buscarSolicitacoesPorStatus(status); 
+
+            Page<SolicitacaoFerias> paginaSolicitacoes = feriasService.buscarSolicitacoesPorStatus(status, pageable); 
+            return ResponseEntity.ok(paginaSolicitacoes);
+        } catch (Exception e) {
+            // log.error("Erro ao buscar solicitações de férias", e); 
+            Map<String, String> errorResponse = Map.of("erro", "Erro interno ao buscar solicitações de férias.");
+            return ResponseEntity.internalServerError().body(errorResponse);
+        }
+    }
+    @GetMapping("/solicitacoes/colaborador/{colaboradorId}")
+    public ResponseEntity<?> buscarMinhasSolicitacoes(
+            @PathVariable Long colaboradorId
+    ) {
+        try {
+            List<SolicitacaoFerias> solicitacoes = feriasService.buscarSolicitacoesPorColaborador(colaboradorId);
             return ResponseEntity.ok(solicitacoes);
         } catch (Exception e) {
-            // log.error("Erro ao buscar solicitações de férias", e); // É bom logar o erro real
-            Map<String, String> errorResponse = Map.of("erro", "Erro interno ao buscar solicitações de férias.");
+            Map<String, String> errorResponse = Map.of("erro", "Erro interno ao buscar histórico de solicitações.");
             return ResponseEntity.internalServerError().body(errorResponse);
         }
     }
