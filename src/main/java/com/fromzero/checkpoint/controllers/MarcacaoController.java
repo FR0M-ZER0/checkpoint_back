@@ -81,6 +81,21 @@ public class MarcacaoController {
         return ResponseEntity.ok(marcacaoService.atualizarMarcacao(id, marcacaoAtualizada));
     }
 
+    @PostMapping("/processar-trabalho")
+    public ResponseEntity<String> processarTrabalhoDiario(
+            @RequestParam Long colaboradorId,
+            @RequestParam String data) {  // agora recebe como String pura
+
+        try {
+            LocalDate dataFormatada = LocalDate.parse(data.trim()); // Remove espaços/quebras e converte seguro
+            marcacaoService.processarTrabalhoDiario(colaboradorId, dataFormatada);
+            return ResponseEntity.ok("Processamento concluído para o colaborador ID: " + colaboradorId + " na data: " + dataFormatada);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Erro ao processar data: " + e.getMessage());
+        }
+    }
+
+    
     // Deletar marcação
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletarMarcacao(@PathVariable String id) {

@@ -9,6 +9,8 @@ import com.fromzero.checkpoint.repositories.HorasExtrasRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -19,12 +21,28 @@ import java.util.stream.Collectors;
 @Service
 public class HorasExtrasService {
 
+    private static final Logger logger = LoggerFactory.getLogger(HorasExtrasService.class);
+
     @Autowired
     private HorasExtrasRepository horasExtrasRepository;
     
     @Autowired
     private ColaboradorRepository colaboradorRepository;
 
+    public HorasExtras salvarHorasExtras(HorasExtras horasExtras) {
+        if (horasExtras.getSaldo() == null || horasExtras.getColaboradorId() == null) {
+            throw new RuntimeException("Saldo e ColaboradorId são obrigatórios para salvar horas extras.");
+        }
+
+        logger.info("Tentando salvar horas extras -> ColaboradorId: {}, Saldo: {}, Status: {}",
+                horasExtras.getColaboradorId(), horasExtras.getSaldo(), horasExtras.getStatus());
+
+        HorasExtras salvo = horasExtrasRepository.save(horasExtras);
+
+        logger.info("Horas extras salvas com sucesso! ID salvo: {}", salvo.getId());
+        return salvo;
+    }
+    
     public List<HorasExtrasAcumuladasDTO> buscarHorasExtrasAcumuladasPorColaborador() {
         List<Colaborador> colaboradores = colaboradorRepository.findAll();
         
@@ -85,8 +103,9 @@ public class HorasExtrasService {
 
     private BigDecimal converterSaldoParaBigDecimal(String saldo) {
         try {
-            return new BigDecimal(saldo.replace("h", "").replace(",", "."));
+            return new BigDecimal(saldo.replace("h", "").replace(",", ".").replace("min", "").trim());
         } catch (Exception e) {
+            logger.error("Erro ao converter saldo para BigDecimal: {}", saldo, e);
             return BigDecimal.ZERO;
         }
     }

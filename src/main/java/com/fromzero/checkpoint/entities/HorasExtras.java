@@ -7,10 +7,10 @@ import java.time.LocalDateTime;
 @Table(name = "horas_extras")
 public class HorasExtras {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ext_id")
-    private Long id;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "ext_id")  
+	private Long id;
 
     @Column(name = "ext_saldo", nullable = false)
     private String saldo;
@@ -22,23 +22,31 @@ public class HorasExtras {
     @Column(name = "colaborador_id", nullable = false)
     private Long colaboradorId;
 
-    @Column(name = "criado_em", updatable = false)
+    @Column(name = "justificativa", nullable = false)
+    private String justificativa = "";  // 🔥 JÁ COMEÇA VAZIO AQUI
+
+    @Column(name = "criado_em", nullable = false)
     private LocalDateTime criadoEm = LocalDateTime.now();
 
     public enum Status {
-        Aprovado, Rejeitado, Pendente
+        Pendente, Aprovado, Rejeitado
+    }
+    
+    
+
+    public HorasExtras() {
+        // Construtor vazio para JPA
     }
 
-    // Construtores
-    public HorasExtras() {}
-    
     public HorasExtras(String saldo, Status status, Long colaboradorId) {
         this.saldo = saldo;
         this.status = status;
         this.colaboradorId = colaboradorId;
+        this.justificativa = ""; 
     }
 
     // Getters e Setters
+
     public Long getId() {
         return id;
     }
@@ -69,6 +77,14 @@ public class HorasExtras {
 
     public void setColaboradorId(Long colaboradorId) {
         this.colaboradorId = colaboradorId;
+    }
+
+    public String getJustificativa() {
+        return justificativa;
+    }
+
+    public void setJustificativa(String justificativa) {
+        this.justificativa = justificativa;
     }
 
     public LocalDateTime getCriadoEm() {
