@@ -7,6 +7,7 @@ public class HorasExtrasManualDTO {
     private String saldo;  // Ex: "1.50"
     private String status; // Ex: "Aprovado"
     private String tipo;   // Ex: "adicao", "edicao", "exclusao"
+    private String justificativa; // Ex: "Justificativa para a alteração"
 
     public HorasExtrasManualDTO() {}
 
@@ -16,6 +17,7 @@ public class HorasExtrasManualDTO {
         this.saldo = saldo;
         this.status = status;
         this.tipo = tipo;
+        this.justificativa = justificativa;
     }
 
     public Long getColaboradorId() {
@@ -57,4 +59,13 @@ public class HorasExtrasManualDTO {
     public void setTipo(String tipo) {
         this.tipo = tipo;
     }
+
+    public String getJustificativa() {
+        return justificativa;
+    }
+
+    public void setJustificativa(String justificativa) {
+        this.justificativa = justificativa;
+    }
+
 }

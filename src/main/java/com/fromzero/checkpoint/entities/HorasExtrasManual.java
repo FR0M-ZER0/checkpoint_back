@@ -32,4 +32,8 @@ public class HorasExtrasManual {
     public enum Tipo {
         adicao, edicao, exclusao
     }
+
+    @Column(name = "justificativa", nullable = false, length = 500) // <-- Aqui adicionamos a justificativa
+    private String justificativa;
+
 }

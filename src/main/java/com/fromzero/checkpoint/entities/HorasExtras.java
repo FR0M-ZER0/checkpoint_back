@@ -25,8 +25,11 @@ public class HorasExtras {
     @JoinColumn(name = "colaborador_id", nullable = false)
     private Colaborador colaborador; // Mantém relacionamento JPA correto do development
 
+    @Column(name = "justificativa", nullable = false, length = 500)
+    private String justificativa;
+
     @Column(
-        name = "criado_em", 
+        name = "criado_em",     
         updatable = false,
         columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP" // Combina ambas
     )

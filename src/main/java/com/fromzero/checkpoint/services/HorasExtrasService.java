@@ -89,45 +89,45 @@ public class HorasExtrasService {
     }
 
     public void registrarHorasExtrasManual(HorasExtrasManualDTO dto) {
+        if (dto.getJustificativa() == null || dto.getJustificativa().isBlank()) {
+            throw new IllegalArgumentException("Justificativa obrigatória para lançar horas extras.");
+        }
+    
         Colaborador colaborador = colaboradorRepository.findById(dto.getColaboradorId())
                 .orElseThrow(() -> new RuntimeException("Colaborador não encontrado"));
-
+    
         Gestor gestor = gestorRepository.findById(dto.getGestorId())
                 .orElseThrow(() -> new RuntimeException("Gestor não encontrado"));
-
-        // Salvar a hora extra somente se for tipo 'adicao' ou 'edicao'
+    
         HorasExtras horas = null;
+    
         if (dto.getTipo().equalsIgnoreCase("adicao") || dto.getTipo().equalsIgnoreCase("edicao")) {
             horas = new HorasExtras();
             horas.setColaborador(colaborador);
             horas.setSaldo(dto.getSaldo() + "h");
             horas.setStatus(Status.valueOf(capitalize(dto.getStatus().toLowerCase())));
             horas.setCriadoEm(LocalDateTime.now());
+            horas.setJustificativa(dto.getJustificativa());
             horas = horasExtrasRepository.save(horas);
         }
-
-        // Criar registro no log de alterações
+    
         HorasExtrasManual manual = new HorasExtrasManual();
         manual.setGestor(gestor);
-        manual.setHorasExtras(horas); // pode ser null se for exclusão
+        manual.setHorasExtras(horas); // Se for exclusão, pode ser null
         manual.setTipo(Tipo.valueOf(dto.getTipo().toLowerCase())); // adicao, edicao ou exclusao
-        manual.setCriadoEm(LocalDateTime.now());
-
+        manual.setJustificativa(dto.getJustificativa());
         horasExtrasManualRepository.save(manual);
-
-        notificarColaboradorPorEmail(colaborador, dto.getSaldo(), dto.getTipo());
-    }
-
-    private String capitalize(String str) {
-        if (str == null || str.isEmpty()) return str;
-        return str.substring(0, 1).toUpperCase() + str.substring(1).toLowerCase();
-    }
-
     
+        // Se for adição ou edição, manda saldo. Se for exclusão, saldo = "0"
+        String saldoNotificar = (dto.getTipo().equalsIgnoreCase("exclusao")) ? "0" : dto.getSaldo();
+    
+        notificarColaboradorPorEmail(colaborador, saldoNotificar, dto.getTipo(), dto.getJustificativa());
+    }
+
     @Autowired
     private JavaMailSender mailSender;
 
-    private void notificarColaboradorPorEmail(Colaborador colaborador, String saldo, String tipo) {
+    private void notificarColaboradorPorEmail(Colaborador colaborador, String saldo, String tipo, String justificativa) {
         if (colaborador.getEmail() != null && !colaborador.getEmail().isEmpty()) {
             String acao;
             switch (tipo.toLowerCase()) {
@@ -150,6 +150,7 @@ public class HorasExtrasService {
             message.setText("Olá " + colaborador.getNome() + ",\n\n" +
                             "As suas horas extras foram " + acao + " com sucesso.\n" +
                             "Quantidade: " + saldo + "h\n\n" +
+                            "Justificativa: " + justificativa + "\n\n" +
                             "Se tiver qualquer dúvida, entre em contato com seu gestor.\n\n" +
                             "Atenciosamente,\n" +
                             "Equipe CheckPoint");
@@ -157,5 +158,10 @@ public class HorasExtrasService {
             mailSender.send(message);
         }
     }
+    private String capitalize(String str) {
+        if (str == null || str.isEmpty()) return str;
+        return str.substring(0, 1).toUpperCase() + str.substring(1).toLowerCase();
+    }
+    
 }
 
