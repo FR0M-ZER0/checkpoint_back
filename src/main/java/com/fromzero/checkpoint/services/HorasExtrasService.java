@@ -1,5 +1,6 @@
 package com.fromzero.checkpoint.services;
 
+import com.fromzero.checkpoint.dto.HorasExtrasAcumuladasDTO;
 import com.fromzero.checkpoint.dto.HorasExtrasDTO;
 import com.fromzero.checkpoint.dto.HorasExtrasManualDTO;
 import com.fromzero.checkpoint.entities.Colaborador;
@@ -17,10 +18,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.beans.factory.annotation.Autowired;
-
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Month;
 import java.util.List;
@@ -32,7 +32,7 @@ public class HorasExtrasService {
 
     @Autowired
     private HorasExtrasRepository horasExtrasRepository;
-
+    
     @Autowired
     private ColaboradorRepository colaboradorRepository;
 
@@ -42,6 +42,45 @@ public class HorasExtrasService {
     @Autowired
     private HorasExtrasManualRepository horasExtrasManualRepository;
 
+    @Autowired
+    private JavaMailSender mailSender;
+
+    // Métodos da branch fzs-92-gestor-he-view
+    public List<HorasExtrasAcumuladasDTO> buscarHorasExtrasAcumuladasPorColaborador() {
+        List<Colaborador> colaboradores = colaboradorRepository.findAll();
+        
+        return colaboradores.stream()
+                .map(colaborador -> {
+                    BigDecimal totalHoras = calcularTotalHorasExtrasAprovadas(colaborador.getId());
+                    return new HorasExtrasAcumuladasDTO(
+                            colaborador.getId(),
+                            colaborador.getNome(),
+                            totalHoras
+                    );
+                })
+                .collect(Collectors.toList());
+    }
+
+    public List<HorasExtrasAcumuladasDTO> buscarHorasExtrasAcumuladasPorPeriodo(LocalDate dataInicio, LocalDate dataFim) {
+        List<Colaborador> colaboradores = colaboradorRepository.findAll();
+        
+        return colaboradores.stream()
+                .map(colaborador -> {
+                    BigDecimal totalHoras = calcularTotalHorasExtrasAprovadasPorPeriodo(
+                            colaborador.getId(), 
+                            dataInicio, 
+                            dataFim
+                    );
+                    return new HorasExtrasAcumuladasDTO(
+                            colaborador.getId(),
+                            colaborador.getNome(),
+                            totalHoras
+                    );
+                })
+                .collect(Collectors.toList());
+    }
+
+    // Métodos da branch development
     public List<HorasExtrasDTO> buscarSaldoMensalPorColaborador(Long colaboradorId) {
         LocalDateTime agora = LocalDateTime.now();
         int anoAtual = agora.getYear();
@@ -124,8 +163,38 @@ public class HorasExtrasService {
         notificarColaboradorPorEmail(colaborador, saldoNotificar, dto.getTipo(), dto.getJustificativa());
     }
 
-    @Autowired
-    private JavaMailSender mailSender;
+    // Métodos auxiliares
+    private BigDecimal calcularTotalHorasExtrasAprovadas(Long colaboradorId) {
+        List<HorasExtras> horasExtras = horasExtrasRepository.findByColaboradorIdAndStatus(colaboradorId, Status.Aprovado);
+        
+        return horasExtras.stream()
+                .map(h -> converterSaldoParaBigDecimal(h.getSaldo()))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private BigDecimal calcularTotalHorasExtrasAprovadasPorPeriodo(Long colaboradorId, LocalDate dataInicio, LocalDate dataFim) {
+        LocalDateTime inicio = dataInicio.atStartOfDay();
+        LocalDateTime fim = dataFim.plusDays(1).atStartOfDay();
+        
+        List<HorasExtras> horasExtras = horasExtrasRepository.findByColaboradorIdAndStatusAndCriadoEmBetween(
+                colaboradorId, 
+                Status.Aprovado,
+                inicio,
+                fim
+        );
+        
+        return horasExtras.stream()
+                .map(h -> converterSaldoParaBigDecimal(h.getSaldo()))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private BigDecimal converterSaldoParaBigDecimal(String saldo) {
+        try {
+            return new BigDecimal(saldo.replace("h", "").replace(",", "."));
+        } catch (Exception e) {
+            return BigDecimal.ZERO;
+        }
+    }
 
     private void notificarColaboradorPorEmail(Colaborador colaborador, String saldo, String tipo, String justificativa) {
         if (colaborador.getEmail() != null && !colaborador.getEmail().isEmpty()) {
@@ -158,10 +227,9 @@ public class HorasExtrasService {
             mailSender.send(message);
         }
     }
+
     private String capitalize(String str) {
         if (str == null || str.isEmpty()) return str;
         return str.substring(0, 1).toUpperCase() + str.substring(1).toLowerCase();
     }
-    
 }
-

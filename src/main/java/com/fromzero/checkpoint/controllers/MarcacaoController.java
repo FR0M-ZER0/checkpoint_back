@@ -129,4 +129,13 @@ public class MarcacaoController {
                 respostaService.criarResposta("O horário do seu ponto foi ajustado", TipoResposta.ponto, colaborador);
         return ResponseEntity.ok(marcacaoAtualizada);
     }
+
+    // Obter horas totais trabalhadas em um dia
+    @GetMapping("/colaborador/{colaboradorId}/total-trabalhado/{data}")
+    public ResponseEntity<String> obterTotalTrabalhadoPorDia(
+            @PathVariable Long colaboradorId, 
+            @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data) {
+        String totalTrabalhado = marcacaoService.calcularTotalTrabalhadoDia(colaboradorId, data);
+        return ResponseEntity.ok(totalTrabalhado);
+    }
 }

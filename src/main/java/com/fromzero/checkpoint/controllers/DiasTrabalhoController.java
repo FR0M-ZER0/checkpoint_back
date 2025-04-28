@@ -46,7 +46,7 @@ public class DiasTrabalhoController {
                 .collect(Collectors.groupingBy(m -> m.getDataHora().toLocalDate()));
 
         marcacoesPorDia.entrySet().stream()
-                .filter(entry -> entry.getValue().size() == 4)
+                .filter(entry -> !entry.getValue().isEmpty())
                 .forEach(entry -> diasTrabalho.put(entry.getKey(), "normal"));
 
         List<Falta> faltas = faltaRepository.findByColaboradorId(colaboradorId);
@@ -159,7 +159,7 @@ public class DiasTrabalhoController {
                 .filter(m -> m.getDataHora().toLocalDate().equals(date))
                 .collect(Collectors.toList());
 
-        if (marcacoes.size() == 4) {
+        if (!marcacoes.isEmpty()) {
             response.put("tipo", "normal");
             response.put("marcacoes", marcacoes);
             return ResponseEntity.ok(response);
@@ -167,5 +167,49 @@ public class DiasTrabalhoController {
 
         response.put("tipo", "desconhecido");
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{colaboradorId}/filtro/{tipo}")
+    public ResponseEntity<Map<LocalDate, String>> getDiasPorTipo(
+            @PathVariable Long colaboradorId, 
+            @PathVariable String tipo) {
+    
+        Map<LocalDate, String> diasFiltrados = new TreeMap<>(Comparator.reverseOrder());
+    
+        switch (tipo.toLowerCase()) {
+            case "folga":
+                folgaRepository.findByColaboradorId(colaboradorId)
+                        .forEach(folga -> diasFiltrados.put(folga.getData(), "folga"));
+                break;
+            
+            case "falta":
+                faltaRepository.findByColaboradorId(colaboradorId)
+                        .forEach(falta -> diasFiltrados.put(falta.getCriadoEm().toLocalDate(), "falta"));
+                break;
+    
+            case "ferias":
+                feriasRepository.findByColaboradorId(colaboradorId)
+                        .forEach(ferias -> {
+                            LocalDate inicio = ferias.getDataInicio();
+                            LocalDate fim = ferias.getDataFim();
+                            while (!inicio.isAfter(fim)) {
+                                diasFiltrados.put(inicio, "ferias");
+                                inicio = inicio.plusDays(1);
+                            }
+                        });
+                break;
+    
+            case "marcacao":
+                marcacaoRepository.findByColaboradorId(colaboradorId)
+                        .stream()
+                        .collect(Collectors.groupingBy(m -> m.getDataHora().toLocalDate()))
+                        .forEach((data, marcacoes) -> diasFiltrados.put(data, "normal"));
+                break;
+    
+            default:
+                return ResponseEntity.badRequest().body(null);
+        }
+    
+        return ResponseEntity.ok(diasFiltrados);
     }
 }
