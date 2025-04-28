@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import com.fromzero.checkpoint.entities.Marcacao;
 import com.fromzero.checkpoint.entities.MarcacaoLog;
 import com.fromzero.checkpoint.entities.Colaborador;
+import com.fromzero.checkpoint.entities.Gestor;
 import com.fromzero.checkpoint.entities.HorasExtras;
 import com.fromzero.checkpoint.entities.HorasExtras.Status;
 import com.fromzero.checkpoint.entities.Notificacao.NotificacaoTipo;
@@ -49,6 +50,9 @@ public class MarcacaoService {
 
     @Autowired
     private ColaboradorRepository colaboradorRepository;
+
+    @Autowired
+    private JavaMailSender mailSender;
 
     public List<Marcacao> listarMarcacoes() {
         return marcacaoRepository.findAll();
@@ -251,6 +255,8 @@ public class MarcacaoService {
         HorasExtras horasExtras = new HorasExtras(saldoFormatado, Status.Aprovado, colaboradorId);
         horasExtras.setJustificativa("");
         horasExtrasService.salvarHorasExtras(horasExtras);
+
+        enviarEmailParaTodosGestores(colaboradorId, saldoFormatado);
     }
 
     private void criarNotificacao(Long colaboradorId, String mensagem) {
@@ -330,4 +336,34 @@ public class MarcacaoService {
 
         return tempoTotal;
     }
+    private void enviarEmailParaTodosGestores(Long colaboradorId, String saldoHoras) {
+    Colaborador colaborador = colaboradorRepository.findById(colaboradorId)
+            .orElseThrow(() -> new RuntimeException("Colaborador não encontrado"));
+
+    List<Gestor> gestores = gestorRepository.findAll();
+
+    if (gestores.isEmpty()) {
+        logger.warn("Nenhum gestor encontrado para enviar notificação de horas extras.");
+        return;
+    }
+
+    for (Gestor gestor : gestores) {
+        if (gestor.getEmail() != null && !gestor.getEmail().isEmpty()) {
+            try {
+                SimpleMailMessage message = new SimpleMailMessage();
+                message.setTo(gestor.getEmail());
+                message.setSubject("Novo Lançamento de Horas Extras - " + colaborador.getNome());
+                message.setText("Olá " + gestor.getNome() + ",\n\n" +
+                                "O colaborador " + colaborador.getNome() + " registrou " + saldoHoras + " de horas extras automaticamente.\n\n" +
+                                "Por favor, avalie e tome as ações necessárias.\n\n" +
+                                "Atenciosamente,\nEquipe CheckPoint");
+
+                mailSender.send(message);
+            } catch (Exception e) {
+                logger.error("Erro ao enviar e-mail para o gestor: " + gestor.getEmail(), e);
+            }
+        }
+    }
+}
+
 }
