@@ -47,7 +47,6 @@ public class HorasExtrasController {
                 horasExtrasService.buscarHorasExtrasAcumuladasPorPeriodo(inicio, fim);
         return ResponseEntity.ok(horasAcumuladas);
     }
-}
 
     @PostMapping("/manual")
     public ResponseEntity<String> registrarHorasExtrasManual(@RequestBody HorasExtrasManualDTO dto) {
