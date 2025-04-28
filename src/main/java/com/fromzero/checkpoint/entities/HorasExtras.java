@@ -22,8 +22,15 @@ public class HorasExtras {
     @Column(name = "colaborador_id", nullable = false)
     private Long colaboradorId;
 
-    @Column(name = "criado_em", updatable = false)
-    private LocalDateTime criadoEm = LocalDateTime.now();
+    @Column(name = "justificativa", nullable = false, length = 500)
+    private String justificativa;
+
+    @Column(
+        name = "criado_em",     
+        updatable = false,
+        columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP" // Combina ambas
+    )
+    private LocalDateTime criadoEm = LocalDateTime.now(); // Combina abordagens
 
     public enum Status {
         Aprovado, Rejeitado, Pendente

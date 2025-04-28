@@ -1,6 +1,9 @@
 package com.fromzero.checkpoint.controllers;
 
+
 import com.fromzero.checkpoint.dto.HorasExtrasAcumuladasDTO;
+import com.fromzero.checkpoint.dto.HorasExtrasDTO;
+import com.fromzero.checkpoint.dto.HorasExtrasManualDTO;
 import com.fromzero.checkpoint.services.HorasExtrasService;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,13 +21,16 @@ public class HorasExtrasController {
     @Autowired
     private HorasExtrasService horasExtrasService;
 
+
     // endpoint não está sendo usado
     /*
+
     @GetMapping("/{colaboradorId}")
     public ResponseEntity<List<HorasExtrasDTO>> getHorasExtrasPorMes(@PathVariable Long colaboradorId) {
         List<HorasExtrasDTO> saldoMensal = horasExtrasService.buscarSaldoMensalPorColaborador(colaboradorId);
         return ResponseEntity.ok(saldoMensal);
     }
+
     */
 
     @GetMapping("/acumuladas")
@@ -40,5 +46,12 @@ public class HorasExtrasController {
         List<HorasExtrasAcumuladasDTO> horasAcumuladas = 
                 horasExtrasService.buscarHorasExtrasAcumuladasPorPeriodo(inicio, fim);
         return ResponseEntity.ok(horasAcumuladas);
+    }
+}
+
+    @PostMapping("/manual")
+    public ResponseEntity<String> registrarHorasExtrasManual(@RequestBody HorasExtrasManualDTO dto) {
+        horasExtrasService.registrarHorasExtrasManual(dto);
+        return ResponseEntity.ok("Horas extras registradas com sucesso!");
     }
 }
