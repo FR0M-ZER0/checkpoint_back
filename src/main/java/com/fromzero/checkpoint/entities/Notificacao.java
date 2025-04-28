@@ -34,8 +34,8 @@ public class Notificacao {
     private LocalDateTime criadoEm;
 
     @ManyToOne
-    @JoinColumn(name = "colaborador_id", nullable = false)
-    private Colaborador colaborador;
+    @JoinColumn(name = "colaborador_id")
+    private Colaborador colaborador; 
 
     public enum NotificacaoTipo {
         folga,
