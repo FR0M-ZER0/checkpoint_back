@@ -23,5 +23,4 @@ public interface SolicitacaoFeriasRepository extends JpaRepository<SolicitacaoFe
     @Query("SELECT sf FROM SolicitacaoFerias sf JOIN FETCH sf.colaborador WHERE sf.id = :id")
     Optional<SolicitacaoFerias> findByIdWithColaborador(@Param("id") Long id);
     // ******************************
-
 }

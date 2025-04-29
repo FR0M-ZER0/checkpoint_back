@@ -8,6 +8,10 @@ import com.fromzero.checkpoint.repositories.FaltaRepository;
 import com.fromzero.checkpoint.repositories.FeriasRepository;
 import com.fromzero.checkpoint.repositories.FolgaRepository;
 import com.fromzero.checkpoint.repositories.MarcacaoRepository;
+import com.fromzero.checkpoint.repositories.SolicitacaoAbonoFaltaRepository;
+import com.fromzero.checkpoint.repositories.SolicitacaoFeriasRepository;
+import com.fromzero.checkpoint.repositories.SolicitacaoFolgaRepository;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -35,6 +39,15 @@ public class DiasTrabalhoController {
 
     @Autowired
     private FolgaRepository folgaRepository;
+
+    @Autowired
+    private SolicitacaoFolgaRepository solicitacaoFolgaRepository;
+
+    @Autowired
+    private SolicitacaoFeriasRepository solicitacaoFeriasRepository;
+
+    @Autowired
+    private SolicitacaoAbonoFaltaRepository solicitacaoAbonoFaltaRepository;
 
     @GetMapping("/{colaboradorId}")
     public Map<LocalDate, String> getDiasTrabalho(@PathVariable Long colaboradorId) {
@@ -126,23 +139,38 @@ public class DiasTrabalhoController {
     public ResponseEntity<Map<String, Object>> getDiaTrabalho(@PathVariable Long colaboradorId, @PathVariable String data) {
         LocalDate date = LocalDate.parse(data);
         Map<String, Object> response = new HashMap<>();
-
+    
         boolean estaDeFerias = feriasRepository.findByColaboradorId(colaboradorId)
                 .stream()
                 .anyMatch(f -> !date.isBefore(f.getDataInicio()) && !date.isAfter(f.getDataFim()));
         if (estaDeFerias) {
             response.put("tipo", "ferias");
+    
+            solicitacaoFeriasRepository.findByColaboradorId(colaboradorId).stream()
+                    .filter(s -> !date.isBefore(s.getDataInicio()) && !date.isAfter(s.getDataFim()))
+                    .findFirst()
+                    .ifPresent(s -> response.put("detalhes", Map.of(
+                            "observacao", s.getObservacao(),
+                            "comentarioGestor", s.getComentarioGestor()
+                    )));
             return ResponseEntity.ok(response);
         }
-
+    
         boolean estaDeFolga = folgaRepository.findByColaboradorId(colaboradorId)
                 .stream()
                 .anyMatch(f -> f.getData().equals(date));
         if (estaDeFolga) {
             response.put("tipo", "folga");
+    
+            solicitacaoFolgaRepository.findByColaboradorId(colaboradorId).stream()
+                    .filter(s -> s.getSolFolData().equals(date))
+                    .findFirst()
+                    .ifPresent(s -> response.put("detalhes", Map.of(
+                            "observacao", s.getSolFolObservacao()
+                    )));
             return ResponseEntity.ok(response);
         }
-
+    
         Falta falta = faltaRepository.findByColaboradorId(colaboradorId)
                 .stream()
                 .filter(f -> f.getCriadoEm().toLocalDate().equals(date))
@@ -150,21 +178,29 @@ public class DiasTrabalhoController {
                 .orElse(null);
         if (falta != null) {
             response.put("tipo", "falta");
-            response.put("detalhes", Map.of("tipoFalta", falta.getTipo().name()));
+            Map<String, Object> detalhes = new HashMap<>();
+            detalhes.put("tipoFalta", falta.getTipo().name());
+    
+            solicitacaoAbonoFaltaRepository.findByFaltaId(falta.getId()).ifPresent(s -> {
+                detalhes.put("motivo", s.getMotivo());
+                detalhes.put("justificativa", s.getJustificativa());
+            });
+    
+            response.put("detalhes", detalhes);
             return ResponseEntity.ok(response);
         }
-
+    
         List<Marcacao> marcacoes = marcacaoRepository.findByColaboradorId(colaboradorId)
                 .stream()
                 .filter(m -> m.getDataHora().toLocalDate().equals(date))
                 .collect(Collectors.toList());
-
+    
         if (!marcacoes.isEmpty()) {
             response.put("tipo", "normal");
             response.put("marcacoes", marcacoes);
             return ResponseEntity.ok(response);
         }
-
+    
         response.put("tipo", "desconhecido");
         return ResponseEntity.ok(response);
     }

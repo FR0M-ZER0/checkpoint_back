@@ -46,6 +46,7 @@ public class Notificacao {
         falta
     }
 
+    @Column(name="not_tipo")
     @Enumerated(EnumType.STRING)
     private NotificacaoTipo tipo;
 
