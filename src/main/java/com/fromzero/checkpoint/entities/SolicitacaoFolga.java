@@ -22,7 +22,6 @@ public class SolicitacaoFolga {
     private Integer solFolId;
 
     @Column(name = "sol_fol_data", nullable = false)
-    @JsonFormat(pattern = "dd/MM/yyyy")
     private LocalDate solFolData;
 
     @Column(name = "sol_fol_observacao")
