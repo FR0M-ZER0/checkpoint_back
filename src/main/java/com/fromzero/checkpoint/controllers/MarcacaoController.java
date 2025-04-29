@@ -57,22 +57,21 @@ public class MarcacaoController {
     // Criar marcação
     @PostMapping()
     public ResponseEntity<Marcacao> criarMarcacao(@Valid @RequestBody MarcacaoDTO marcacaoDTO) {
+        try {
+            Marcacao.TipoMarcacao.valueOf(marcacaoDTO.getTipo().toString().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build(); // Retorna 400 se o tipo for inválido
+        }
 
-    try {
-        Marcacao.TipoMarcacao.valueOf(marcacaoDTO.getTipo().toString().toUpperCase());
-    } catch (IllegalArgumentException e) {
-        return ResponseEntity.badRequest().build(); // Retorna 400 se o tipo for inválido
-    }
+        // Criando um novo objeto Marcacao a partir do DTO
+        Marcacao novaMarcacao = new Marcacao();
+        novaMarcacao.setColaboradorId(marcacaoDTO.getColaboradorId());
+        novaMarcacao.setTipo(marcacaoDTO.getTipo());
+        novaMarcacao.setProcessada(false); // Definir como não processada inicialmente
 
-    // Criando um novo objeto Marcacao a partir do DTO
-    Marcacao novaMarcacao = new Marcacao();
-    novaMarcacao.setColaboradorId(marcacaoDTO.getColaboradorId());
-    novaMarcacao.setTipo(marcacaoDTO.getTipo());
-    novaMarcacao.setProcessada(false); // Definir como não processada inicialmente
-
-    // Salvando a nova marcação
-    Marcacao marcacaoSalva = marcacaoService.criarMarcacao(novaMarcacao);
-    return ResponseEntity.status(201).body(marcacaoSalva);
+        // Salvando a nova marcação
+        Marcacao marcacaoSalva = marcacaoService.criarMarcacao(novaMarcacao);
+        return ResponseEntity.status(201).body(marcacaoSalva);
     }
 
     // Atualizar marcação

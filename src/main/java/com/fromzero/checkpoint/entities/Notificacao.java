@@ -42,7 +42,8 @@ public class Notificacao {
         ferias,
         horasExtras,
         ponto,
-        abono
+        abono,
+        falta
     }
 
     @Enumerated(EnumType.STRING)

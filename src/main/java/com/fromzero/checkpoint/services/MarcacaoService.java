@@ -8,8 +8,14 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fromzero.checkpoint.entities.Colaborador;
+import com.fromzero.checkpoint.entities.Falta;
 import com.fromzero.checkpoint.entities.Marcacao;
 import com.fromzero.checkpoint.entities.MarcacaoLog;
+import com.fromzero.checkpoint.entities.Notificacao.NotificacaoTipo;
+import com.fromzero.checkpoint.entities.Resposta.TipoResposta;
+import com.fromzero.checkpoint.repositories.ColaboradorRepository;
+import com.fromzero.checkpoint.repositories.FaltaRepository;
 import com.fromzero.checkpoint.repositories.MarcacaoLogRepository;
 import com.fromzero.checkpoint.repositories.MarcacaoRepository;
 
@@ -31,30 +37,39 @@ public class MarcacaoService {
     @Autowired
     private MarcacaoLogRepository marcacaoLogRepository;
 
+    @Autowired 
+    private FaltaRepository faltaRepository;
+
+    @Autowired
+    private ColaboradorRepository colaboradorRepository;
+
+    @Autowired
+    private NotificacaoService notificacaoService;
+
     // Listar todas as marcações
     public List<Marcacao> listarMarcacoes() {
         return marcacaoRepository.findAll();
     }
 
     // Buscar marcação por id
-    public Optional<Marcacao> buscarMarcacaoPorId(String id) {
-        return marcacaoRepository.findById(id);
-    }
-
-    // Criar nova marcação evitando duplicações
     public Marcacao criarMarcacao(Marcacao marcacao) {
         validarMarcacaoDuplicada(marcacao);
-
+    
         marcacao.setDataHora(LocalDateTime.now()); // Definir o horário de registro
         marcacao.setProcessada(false);
-
+    
         Marcacao novaMarcacao = marcacaoRepository.save(marcacao);
         logger.info("Marcação registrada com sucesso: {}", novaMarcacao);
-
+    
         // Criar log
         MarcacaoLog log = new MarcacaoLog(marcacao.getColaboradorId(), "CRIACAO", marcacao.getTipo());
         marcacaoLogRepository.save(log);
-
+    
+        // Se a marcação for do tipo SAIDA, calcular total trabalhado e verificar necessidade de falta
+        if (marcacao.getTipo() == Marcacao.TipoMarcacao.SAIDA) {
+            calcularTotalTrabalhadoDia(marcacao.getColaboradorId(), LocalDate.now());
+        }
+    
         return novaMarcacao;
     }
 
@@ -173,6 +188,27 @@ public class MarcacaoService {
 
         long horas = totalTrabalhado.toHours();
         long minutos = totalTrabalhado.toMinutesPart();
+
+        if (horas < 8) {
+            boolean faltaExistente = faltaRepository.existsByColaboradorIdAndTipoAndCriadoEmBetween(
+                colaboradorId, 
+                Falta.TipoFalta.Atraso, 
+                dia.atStartOfDay(), 
+                dia.plusDays(1).atStartOfDay()
+            );
+
+            if (!faltaExistente) {
+                Colaborador colaborador = colaboradorRepository.findById(colaboradorId)
+                        .orElseThrow(() -> new RuntimeException("Colaborador não encontrado"));
+
+                Falta falta = new Falta();
+                falta.setColaborador(colaborador);
+                falta.setTipo(Falta.TipoFalta.Atraso);
+                falta.setJustificado(false);
+                faltaRepository.save(falta);
+                notificacaoService.criaNotificacao("Você recebeu uma falta: Você não cumpriu sua carga diária", NotificacaoTipo.falta, falta.getColaborador());
+            }
+        }  
 
         return String.format("%02dh:%02dmin", horas, minutos);
     }
