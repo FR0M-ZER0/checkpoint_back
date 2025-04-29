@@ -113,17 +113,25 @@ public class AbonoFaltaController {
     @PutMapping("/abonar-falta/{id}")
     public ResponseEntity<SolicitacaoAbonoFalta> atualizarSolicitacaoAbonoFalta(
             @PathVariable Long id,
-            @RequestBody SolicitacaoAbonoFalta atualizadaSolicitacao) {
-
+            @RequestBody SolicitacaoAbonoFalta atualizada) {
+    
         return repository.findById(id)
             .map(existing -> {
-                existing.setMotivo(atualizadaSolicitacao.getMotivo());
-                existing.setJustificativa(atualizadaSolicitacao.getJustificativa());
-                existing.setStatus(atualizadaSolicitacao.getStatus());
-                existing.setArquivoCaminho(atualizadaSolicitacao.getArquivoCaminho());
-                repository.save(existing);
-                return ResponseEntity.ok(existing);
+                if (atualizada.getMotivo() != null) {
+                    existing.setMotivo(atualizada.getMotivo());
+                }
+                if (atualizada.getJustificativa() != null) {
+                    existing.setJustificativa(atualizada.getJustificativa());
+                }
+                if (atualizada.getStatus() != null) {
+                    existing.setStatus(atualizada.getStatus());
+                }
+                if (atualizada.getArquivoCaminho() != null) {
+                    existing.setArquivoCaminho(atualizada.getArquivoCaminho());
+                }
+    
+                return ResponseEntity.ok(repository.save(existing));
             })
             .orElse(ResponseEntity.notFound().build());
-    }
+    }    
 }

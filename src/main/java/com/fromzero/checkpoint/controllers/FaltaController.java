@@ -11,6 +11,7 @@ import com.fromzero.checkpoint.entities.Falta;
 import com.fromzero.checkpoint.repositories.ColaboradorRepository;
 import com.fromzero.checkpoint.repositories.FaltaRepository;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -43,6 +44,22 @@ public class FaltaController {
     @GetMapping("/falta/{id}")
     public Falta obterFalta(@PathVariable Long id) {
         return repository.findById(id).get();
+    }
+
+    @PutMapping("/falta/{id}")
+    public ResponseEntity<Falta> atualizarFalta(@PathVariable Long id, @RequestBody Falta novaFalta) {
+        return repository.findById(id)
+            .map(faltaExistente -> {
+                if (novaFalta.getTipo() != null) {
+                    faltaExistente.setTipo(novaFalta.getTipo());
+                }
+                if (novaFalta.getJustificado() != null) {
+                    faltaExistente.setJustificado(novaFalta.getJustificado());
+                }
+    
+                return ResponseEntity.ok(repository.save(faltaExistente));
+            })
+            .orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/falta/{id}")

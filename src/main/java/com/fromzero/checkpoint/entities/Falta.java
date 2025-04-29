@@ -34,7 +34,7 @@ public class Falta {
     private LocalDateTime criadoEm;
 
     @ManyToOne
-    @JoinColumn(name = "colaborador_id", nullable = false) // Changed from "colaborador_id"
+    @JoinColumn(name = "colaborador_id", nullable = false)
     private Colaborador colaborador;
 
     public enum TipoFalta {
@@ -45,6 +45,9 @@ public class Falta {
     @Enumerated(EnumType.STRING)
     @Column(name = "fal_tipo")
     private TipoFalta tipo;
+
+    @Column(name = "fal_justificado")
+    private Boolean justificado;
 
     @PrePersist
     public void prePersist() {
