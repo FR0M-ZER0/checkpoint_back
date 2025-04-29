@@ -134,7 +134,7 @@ public class MarcacaoController {
     public ResponseEntity<String> obterTotalTrabalhadoPorDia(
             @PathVariable Long colaboradorId, 
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data) {
-        String totalTrabalhado = marcacaoService.calcularTotalTrabalhadoDia(colaboradorId, data);
+        String totalTrabalhado = marcacaoService.calcularTotalTrabalhadoDiaSemFalta(colaboradorId, data);
         return ResponseEntity.ok(totalTrabalhado);
     }
 }
