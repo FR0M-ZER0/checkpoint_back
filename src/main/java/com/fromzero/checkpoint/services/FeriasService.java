@@ -20,6 +20,9 @@ import java.time.format.DateTimeFormatter; // Import para o helper de data
 import java.util.List;
 import java.util.Objects;
 import java.time.temporal.ChronoUnit;
+import com.fromzero.checkpoint.dto.DiaDetalheDTO;
+import com.fromzero.checkpoint.dto.SolicitacaoFeriasDetalhesDTO;
+import java.util.Optional;
 
 
 @Service
@@ -217,5 +220,42 @@ public class FeriasService {
           if (date == null) return "??";
           return date.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"));
       }
+      public DiaDetalheDTO getDetalhesDoDia(Long colaboradorId, LocalDate data) {
+        log.info("Buscando detalhes para o dia {} do colaborador {}", data, colaboradorId);
+        DiaDetalheDTO responseDto = new DiaDetalheDTO();
+
+        // 1. Verifica FÉRIAS APROVADAS primeiro
+        Optional<SolicitacaoFerias> feriasOpt = solicitacaoFeriasRepository
+            .findAprovadaByColaboradorIdAndDateBetween(colaboradorId, data);
+
+        if (feriasOpt.isPresent()) {
+            SolicitacaoFerias feriasEncontrada = feriasOpt.get();
+            log.info("Férias encontradas (Aprovada) para o dia {}. ID Sol: {}", data, feriasEncontrada.getId());
+            responseDto.setStatusDia("FÉRIAS"); 
+            responseDto.setDetalhesFerias(new SolicitacaoFeriasDetalhesDTO(feriasEncontrada)); 
+            return responseDto; 
+        }
+
+        // 2. TODO: Adicionar lógica para verificar FOLGA aqui
+        // Ex: Optional<Folga> folgaOpt = folgaRepository.findByColaboradorIdAndData(colaboradorId, data);
+        // if (folgaOpt.isPresent()) { ... responseDto.setStatusDia("FOLGA"); ... return responseDto; }
+
+        // 3. TODO: Adicionar lógica para verificar FALTA aqui
+        // Ex: Optional<Falta> faltaOpt = ...
+        // if (faltaOpt.isPresent()) { ... responseDto.setStatusDia("FALTA"); ... return responseDto; }
+
+        // 4. TODO: Adicionar lógica para verificar DIA NORMAL DE TRABALHO (buscar marcações?)
+        // Ex: List<Marcacao> marcacoes = marcacaoRepository.findByColaboradorIdAndData(colaboradorId, data);
+        // if (!marcacoes.isEmpty()) { responseDto.setStatusDia("NORMAL"); ... }
+
+
+        // 5. Se não for nenhum dos anteriores, status desconhecido ou dia não trabalhado
+        log.info("Nenhum evento especial encontrado para o dia {}", data);
+        if (responseDto.getStatusDia() == null) { // Define um padrão se nada foi encontrado
+            responseDto.setStatusDia("NÃO TRABALHADO / DESCONHECIDO"); 
+        }
+
+        return responseDto;
+    }
       
 } // Fim da classe FeriasService

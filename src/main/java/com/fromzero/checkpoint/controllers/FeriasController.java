@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+// *****************************************
 import org.springframework.web.bind.annotation.*;
 import com.fromzero.checkpoint.services.FeriasService;
 import org.springframework.data.domain.Page;
@@ -23,12 +24,20 @@ import com.fromzero.checkpoint.entities.SolicitacaoFerias; // Precisa desta enti
 import java.util.List;
 // import com.fromzero.checkpoint.entities.Ferias;
 import java.util.Map;
-// *****************************************
+
+import com.fromzero.checkpoint.dto.DiaDetalheDTO;
+import java.time.LocalDate;
+import org.springframework.format.annotation.DateTimeFormat;
+import jakarta.persistence.EntityNotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/api/ferias")
 @CrossOrigin(origins = "http://localhost:5173") // Verifique se esta origem está correta
 public class FeriasController {
+
+    private static final Logger log = LoggerFactory.getLogger(FeriasController.class);
 
     @Autowired
     private FeriasService feriasService;
@@ -153,5 +162,20 @@ public class FeriasController {
     @PostMapping
     public Ferias createFerias(@RequestBody Ferias f) {
         return repository.save(f);
+    }
+    @GetMapping("/dia-detalhes")
+    public ResponseEntity<?> getDetalhesDoDia(
+            @RequestParam Long colaboradorId, 
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data // Espera AAAA-MM-DD
+    ) {
+        log.info("Controller: Recebida requisição para detalhes do dia {} para colaborador {}", data, colaboradorId);
+        try {
+            DiaDetalheDTO detalhes = feriasService.getDetalhesDoDia(colaboradorId, data);
+            return ResponseEntity.ok(detalhes); // Retorna o DTO com os detalhes
+        } catch (Exception e) { // Captura qualquer erro inesperado do service
+            log.error("Controller: Erro ao buscar detalhes do dia para colab {} data {}", colaboradorId, data, e); 
+            Map<String, String> errorResponse = Map.of("erro", "Erro interno ao buscar detalhes do dia.");
+            return ResponseEntity.internalServerError().body(errorResponse);
+        }
     }
 }

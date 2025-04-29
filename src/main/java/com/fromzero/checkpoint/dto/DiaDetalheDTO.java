@@ -1,4 +1,4 @@
-package com.fromzero.checkpoint.dto; // Ajuste o pacote
+package com.fromzero.checkpoint.dto;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 public class DiaDetalheDTO {
     private String statusDia; // Ex: "FÉRIAS", "FOLGA", "FALTA", "NORMAL"
     private SolicitacaoFeriasDetalhesDTO detalhesFerias; // Preenchido se statusDia for "FÉRIAS"
-    // Adicionar outros DTOs de detalhes aqui se necessário (ex: detalhesFolga, detalhesFalta)
-    // private FolgaDetalhesDTO detalhesFolga; 
-    // private FaltaDetalhesDTO detalhesFalta;
+    // private FolgaDetalhesDTO detalhesFolga; // Adicionar depois para Folga
+    // private FaltaDetalhesDTO detalhesFalta; // Adicionar depois para Falta
+    // ... outros detalhes ...
 }
