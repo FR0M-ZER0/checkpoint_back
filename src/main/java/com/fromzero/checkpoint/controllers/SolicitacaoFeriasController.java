@@ -1,6 +1,7 @@
 package com.fromzero.checkpoint.controllers;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,9 +10,11 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import com.fromzero.checkpoint.entities.Colaborador;
+import com.fromzero.checkpoint.entities.Ferias;
 import com.fromzero.checkpoint.entities.Notificacao.NotificacaoTipo;
 import com.fromzero.checkpoint.entities.SolicitacaoFerias;
 import com.fromzero.checkpoint.repositories.ColaboradorRepository;
+import com.fromzero.checkpoint.repositories.FeriasRepository;
 import com.fromzero.checkpoint.repositories.SolicitacaoFeriasRepository;
 import com.fromzero.checkpoint.services.NotificacaoService;
 
@@ -31,6 +34,9 @@ public class SolicitacaoFeriasController {
     @Autowired
     private ColaboradorRepository colaboradorRepository;
 
+    @Autowired
+    private FeriasRepository feriasRepository;
+
     @GetMapping
     public List<SolicitacaoFerias> getAll() {
         return repository.findAll();
@@ -47,21 +53,51 @@ public class SolicitacaoFeriasController {
     }
 
     @PostMapping
-    public ResponseEntity<SolicitacaoFerias> createSolicitacaoFerias(@RequestBody SolicitacaoFerias solicitacaoFerias) {
-        SolicitacaoFerias novaSolicitacao = repository.save(solicitacaoFerias);
+    public ResponseEntity<?> createSolicitacaoFerias(@RequestBody SolicitacaoFerias solicitacaoFerias) {
+        try {
+            Long colaboradorId = solicitacaoFerias.getColaboradorId();
+            if (colaboradorId == null) {
+                return ResponseEntity.badRequest().body(Map.of("erro", "ColaboradorId é obrigatório"));
+            }
 
-        Colaborador colaborador = colaboradorRepository.findById(novaSolicitacao.getColaboradorId())
-            .orElseThrow(() -> new RuntimeException("Colaborador não encontrado"));
+            long diasSolicitados = java.time.temporal.ChronoUnit.DAYS.between(
+                    solicitacaoFerias.getDataInicio(), solicitacaoFerias.getDataFim()) + 1;
 
-        notificacaoService.criaNotificacao(
-            "Sua solicitação de férias foi enviada",
-            NotificacaoTipo.ferias,
-            colaborador
-        );
+            if (diasSolicitados <= 0) {
+                return ResponseEntity.badRequest().body(Map.of("erro", "Período de férias inválido"));
+            }
 
-        messagingTemplate.convertAndSend("/topic/solicitacoes", novaSolicitacao);
+            List<Ferias> feriasList = feriasRepository.findByColaboradorId(colaboradorId);
 
-        return ResponseEntity.ok(novaSolicitacao);
+            int diasUsados = feriasList.stream()
+                    .mapToInt(f -> (int) java.time.temporal.ChronoUnit.DAYS.between(f.getDataInicio(), f.getDataFim()) + 1)
+                    .sum();
+
+            int saldoRestante = 30 - diasUsados;
+
+            if (diasSolicitados > saldoRestante) {
+                return ResponseEntity.badRequest().body(Map.of("erro", "Saldo de férias insuficiente. Saldo atual: " + saldoRestante + " dias"));
+            }
+
+            SolicitacaoFerias novaSolicitacao = repository.save(solicitacaoFerias);
+
+            Colaborador colaborador = colaboradorRepository.findById(colaboradorId)
+                .orElseThrow(() -> new RuntimeException("Colaborador não encontrado"));
+
+            notificacaoService.criaNotificacao(
+                "Sua solicitação de férias foi enviada",
+                NotificacaoTipo.ferias,
+                colaborador
+            );
+
+            messagingTemplate.convertAndSend("/topic/solicitacoes", novaSolicitacao);
+
+            return ResponseEntity.ok(novaSolicitacao);
+
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("erro", "Erro ao processar solicitação de férias"));
+        }
     }
 
     @PutMapping("/{id}")

@@ -4,12 +4,16 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fromzero.checkpoint.entities.Colaborador;
 import com.fromzero.checkpoint.entities.Falta;
+import com.fromzero.checkpoint.entities.Notificacao.NotificacaoTipo;
 import com.fromzero.checkpoint.repositories.ColaboradorRepository;
 import com.fromzero.checkpoint.repositories.FaltaRepository;
+import com.fromzero.checkpoint.services.NotificacaoService;
+
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -26,13 +30,27 @@ public class FaltaController {
 
     @Autowired
     private ColaboradorRepository colaboradorRepository;
+
+    @Autowired
+    private NotificacaoService notificacaoService;
+
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
     
     @PostMapping("/falta")
     public Falta cadastrarFalta(@RequestBody Falta f) {
         Colaborador colaborador = colaboradorRepository.findById(f.getColaborador().getId())
             .orElseThrow(() -> new RuntimeException("Colaborador não encontrado"));
         f.setColaborador(colaborador);
-        repository.save(f);  
+        repository.save(f);
+
+        notificacaoService.criaNotificacao(
+            "Suas férias foram aprovadas",
+            NotificacaoTipo.ferias,
+            colaborador
+        );
+
+        messagingTemplate.convertAndSend("/topic/solicitacoes", f);
         return f;
     }
     

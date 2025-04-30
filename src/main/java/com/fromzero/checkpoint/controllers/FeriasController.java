@@ -154,4 +154,28 @@ public class FeriasController {
     public Ferias createFerias(@RequestBody Ferias f) {
         return repository.save(f);
     }
+
+    @GetMapping("/saldo-calculado")
+    public ResponseEntity<?> getSaldoCalculado(@RequestParam Long colaboradorId) {
+        try {
+            if (colaboradorId == null) {
+                return ResponseEntity.badRequest().body(Map.of("erro", "ID do colaborador é obrigatório"));
+            }
+
+            List<Ferias> feriasList = repository.findByColaboradorId(colaboradorId);
+
+            int totalDiasUsados = feriasList.stream()
+                    .mapToInt(f -> (int) java.time.temporal.ChronoUnit.DAYS.between(f.getDataInicio(), f.getDataFim()) + 1)
+                    .sum();
+
+            int saldo = 30 - totalDiasUsados;
+            saldo = Math.max(saldo, 0);
+
+            return ResponseEntity.ok(Map.of("saldo", saldo));
+
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("erro", "Erro interno ao calcular saldo de férias."));
+        }
+    }
 }
