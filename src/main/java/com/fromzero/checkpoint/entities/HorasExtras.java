@@ -78,6 +78,10 @@ public class HorasExtras {
         this.colaboradorId = colaboradorId;
     }
 
+    public void setJustificativa(String justificativa) {
+        this.justificativa = justificativa;
+    }
+
     public LocalDateTime getCriadoEm() {
         return criadoEm;
     }

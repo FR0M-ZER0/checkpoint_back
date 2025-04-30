@@ -142,7 +142,7 @@ public class HorasExtrasService {
     
         if (dto.getTipo().equalsIgnoreCase("adicao") || dto.getTipo().equalsIgnoreCase("edicao")) {
             horas = new HorasExtras();
-            horas.setColaborador(colaborador);
+            horas.setColaboradorId(colaborador.getId());
             horas.setSaldo(dto.getSaldo() + "h");
             horas.setStatus(Status.valueOf(capitalize(dto.getStatus().toLowerCase())));
             horas.setCriadoEm(LocalDateTime.now());
