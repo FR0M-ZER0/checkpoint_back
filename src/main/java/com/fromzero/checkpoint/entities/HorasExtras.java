@@ -81,6 +81,14 @@ public class HorasExtras {
     public LocalDateTime getCriadoEm() {
         return criadoEm;
     }
+    
+    public String getJustificativa() {
+        return justificativa;
+    }
+
+    public void setJustificativa(String justificativa) {
+        this.justificativa = justificativa;
+    }
 
     public void setCriadoEm(LocalDateTime criadoEm) {
         this.criadoEm = criadoEm;

@@ -126,6 +126,23 @@ public class HorasExtrasService {
                 })
                 .collect(Collectors.toList());
     }
+    
+    public List<HorasExtras> buscarHorasExtrasAprovadasPorColaborador(Long colaboradorId) {
+        return horasExtrasRepository.findByColaboradorIdAndStatus(colaboradorId, Status.Aprovado);
+    }
+
+    public List<HorasExtras> buscarHorasExtrasAprovadasPorColaboradorEPeriodo(
+            Long colaboradorId, LocalDate inicio, LocalDate fim) {
+        
+        LocalDateTime inicioDateTime = inicio.atStartOfDay();
+        LocalDateTime fimDateTime = fim.plusDays(1).atStartOfDay();
+        
+        return horasExtrasRepository.findByColaboradorIdAndStatusAndCriadoEmBetween(
+                colaboradorId, 
+                Status.Aprovado,
+                inicioDateTime,
+                fimDateTime);
+    }
 
     public void registrarHorasExtrasManual(HorasExtrasManualDTO dto) {
         if (dto.getJustificativa() == null || dto.getJustificativa().isBlank()) {
@@ -142,7 +159,7 @@ public class HorasExtrasService {
     
         if (dto.getTipo().equalsIgnoreCase("adicao") || dto.getTipo().equalsIgnoreCase("edicao")) {
             horas = new HorasExtras();
-            horas.setColaborador(colaborador);
+            horas.setColaboradorId(colaborador.getId());
             horas.setSaldo(dto.getSaldo() + "h");
             horas.setStatus(Status.valueOf(capitalize(dto.getStatus().toLowerCase())));
             horas.setCriadoEm(LocalDateTime.now());
