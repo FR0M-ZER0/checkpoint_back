@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Optional;
+import java.time.LocalDate;
 
 public interface SolicitacaoFeriasRepository extends JpaRepository<SolicitacaoFerias, Long> {
 
@@ -23,4 +24,13 @@ public interface SolicitacaoFeriasRepository extends JpaRepository<SolicitacaoFe
     @Query("SELECT sf FROM SolicitacaoFerias sf JOIN FETCH sf.colaborador WHERE sf.id = :id")
     Optional<SolicitacaoFerias> findByIdWithColaborador(@Param("id") Long id);
     // ******************************
+
+    @Query("SELECT sf FROM SolicitacaoFerias sf LEFT JOIN FETCH sf.colaborador " +
+    "WHERE sf.colaboradorId = :colaboradorId AND sf.status = 'APROVADO' " +
+    "AND :data BETWEEN sf.dataInicio AND sf.dataFim")
+    Optional<SolicitacaoFerias> findAprovadaByColaboradorIdAndDateBetween(
+    @Param("colaboradorId") Long colaboradorId, 
+    @Param("data") LocalDate data
+    );
+
 }

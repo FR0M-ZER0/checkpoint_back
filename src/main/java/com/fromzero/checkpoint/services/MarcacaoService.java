@@ -239,5 +239,8 @@ public class MarcacaoService {
 
         return String.format("%02dh:%02dmin", horas, minutos);
     }
- 
+    
+    public Optional<Marcacao> buscarMarcacaoPorId(String id) {
+        return marcacaoRepository.findById(id);
+    }
 }

@@ -27,13 +27,21 @@ import com.fromzero.checkpoint.entities.SolicitacaoFerias; // Precisa desta enti
 import java.util.List;
 // import com.fromzero.checkpoint.entities.Ferias;
 import java.util.Map;
-// *****************************************
+
+import com.fromzero.checkpoint.dto.DiaDetalheDTO;
+import java.time.LocalDate;
+import org.springframework.format.annotation.DateTimeFormat;
+import jakarta.persistence.EntityNotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 @RestController
 @RequestMapping("/api/ferias")
 @CrossOrigin(origins = "http://localhost:5173") // Verifique se esta origem está correta
 public class FeriasController {
+
+    private static final Logger log = LoggerFactory.getLogger(FeriasController.class);
 
     @Autowired
     private FeriasService feriasService;

@@ -8,6 +8,7 @@ import com.fromzero.checkpoint.entities.Folga;
 import com.fromzero.checkpoint.entities.HorasExtras;
 import com.fromzero.checkpoint.repositories.FolgaRepository;
 import com.fromzero.checkpoint.repositories.HorasExtrasRepository;
+import com.fromzero.checkpoint.entities.HorasExtras;
 import com.fromzero.checkpoint.services.HorasExtrasService;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +45,26 @@ public class HorasExtrasController {
         List<HorasExtrasAcumuladasDTO> horasAcumuladas = 
                 horasExtrasService.buscarHorasExtrasAcumuladasPorPeriodo(inicio, fim);
         return ResponseEntity.ok(horasAcumuladas);
+    }
+    
+    @GetMapping("/colaborador/{colaboradorId}/aprovadas")
+    public ResponseEntity<List<HorasExtras>> getHorasExtrasAprovadasPorColaborador(
+            @PathVariable Long colaboradorId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fim) {
+        
+        List<HorasExtras> horasAprovadas;
+        
+        if (inicio != null && fim != null) {
+            // Com filtro de período
+            horasAprovadas = horasExtrasService.buscarHorasExtrasAprovadasPorColaboradorEPeriodo(
+                colaboradorId, inicio, fim);
+        } else {
+            // Sem filtro - todas aprovadas
+            horasAprovadas = horasExtrasService.buscarHorasExtrasAprovadasPorColaborador(colaboradorId);
+        }
+        
+        return ResponseEntity.ok(horasAprovadas);
     }
 
     @PostMapping("/manual")
