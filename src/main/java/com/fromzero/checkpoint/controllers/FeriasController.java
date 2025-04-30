@@ -4,8 +4,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import com.fromzero.checkpoint.services.FeriasService;
+import com.fromzero.checkpoint.services.NotificacaoService;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -15,6 +18,7 @@ import jakarta.persistence.EntityNotFoundException;
 import com.fromzero.checkpoint.entities.Colaborador;
 import com.fromzero.checkpoint.entities.Ferias;
 import com.fromzero.checkpoint.entities.Notificacao.NotificacaoTipo;
+import com.fromzero.checkpoint.repositories.ColaboradorRepository;
 import com.fromzero.checkpoint.repositories.FeriasRepository;
 // ***** IMPORTS CORRIGIDOS/ADICIONADOS *****
 import com.fromzero.checkpoint.entities.SolicitacaoAbonoFerias;
@@ -24,6 +28,7 @@ import java.util.List;
 // import com.fromzero.checkpoint.entities.Ferias;
 import java.util.Map;
 // *****************************************
+
 
 @RestController
 @RequestMapping("/api/ferias")
@@ -35,6 +40,15 @@ public class FeriasController {
 
     @Autowired
     private FeriasRepository repository;
+
+    @Autowired
+    private ColaboradorRepository colaboradorRepository;
+
+    @Autowired
+    private NotificacaoService notificacaoService;
+
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
 
     @GetMapping("/saldo")
     public ResponseEntity<?> getSaldoFerias(@RequestParam Long colaboradorId) {
@@ -152,6 +166,12 @@ public class FeriasController {
 
     @PostMapping
     public Ferias createFerias(@RequestBody Ferias f) {
+        Colaborador colaborador = colaboradorRepository.findById(f.getColaboradorId())
+                .orElseThrow(() -> new RuntimeException("Colaborador não encontrado"));
+
+        notificacaoService.criaNotificacao("Sua solicitação de férias foi aceita", NotificacaoTipo.ferias, colaborador);
+
+        messagingTemplate.convertAndSend("/topic/solicitacoes", f);
         return repository.save(f);
     }
 
