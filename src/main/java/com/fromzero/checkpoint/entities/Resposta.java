@@ -6,27 +6,29 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 @Entity
+@Table(name="resposta")
 @Data
 public class Resposta {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name="res_id")
     private Long id;
 
-    @Column()
+    @Column(name="res_mensagem")
     private String mensagem;
 
-    @Column()
+    @Column(name="res_lida")
     private Boolean lida = false;
 
     @Enumerated(EnumType.STRING)
-    @Column()
+    @Column(name="res_tipo")
     private TipoResposta tipo;
 
     @ManyToOne
-    @JoinColumn(name = "colaborador_id")
+    @JoinColumn(name = "colaborador_id", nullable = false)
     private Colaborador colaborador;
 
-    @Column()
+    @Column(name = "criado_em")
     private LocalDateTime criadoEm;
 
     @PrePersist

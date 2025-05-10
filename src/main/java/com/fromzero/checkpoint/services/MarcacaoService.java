@@ -13,6 +13,7 @@ import com.fromzero.checkpoint.entities.MarcacaoLog;
 import com.fromzero.checkpoint.repositories.MarcacaoLogRepository;
 import com.fromzero.checkpoint.repositories.MarcacaoRepository;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -147,5 +148,33 @@ public class MarcacaoService {
         marcacao.setDataHora(novaDataHora);
         return marcacaoRepository.save(marcacao);
     }
-    
+
+    public String calcularTotalTrabalhadoDia(Long colaboradorId, LocalDate dia) {
+        // Obter todas as marcações de um colaborador para o dia específico
+        List<Marcacao> marcacoes = marcacaoRepository.findByColaboradorIdAndDataHoraBetween(
+                colaboradorId,
+                dia.atStartOfDay(),
+                dia.plusDays(1).atStartOfDay()
+        );
+
+        LocalDateTime entrada = null;
+        LocalDateTime ultimaSaida = null;
+        Duration totalTrabalhado = Duration.ZERO;
+
+        for (Marcacao marcacao : marcacoes) {
+            if (marcacao.getTipo() == Marcacao.TipoMarcacao.ENTRADA) {
+                entrada = marcacao.getDataHora();
+            } else if (marcacao.getTipo() == Marcacao.TipoMarcacao.SAIDA && entrada != null) {
+                ultimaSaida = marcacao.getDataHora();
+                totalTrabalhado = totalTrabalhado.plus(Duration.between(entrada, ultimaSaida));
+                entrada = null;
+            }
+        }
+
+        long horas = totalTrabalhado.toHours();
+        long minutos = totalTrabalhado.toMinutesPart();
+
+        return String.format("%02dh:%02dmin", horas, minutos);
+    }
+ 
 }
