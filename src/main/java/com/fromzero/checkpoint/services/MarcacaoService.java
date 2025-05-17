@@ -51,6 +51,10 @@ public class MarcacaoService {
         return marcacaoRepository.findAll();
     }
 
+    public Optional<Marcacao> buscarMarcacaoPorId(String id) {
+        return marcacaoRepository.findById(id);
+    }
+
     // Buscar marcação por id
     public Marcacao criarMarcacao(Marcacao marcacao) {
         validarMarcacaoDuplicada(marcacao);
