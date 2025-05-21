@@ -3,6 +3,7 @@ package com.fromzero.checkpoint.controllers;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fromzero.checkpoint.entities.Colaborador;
@@ -83,6 +85,30 @@ public class ColaboradorController {
             Colaborador atualizado = repository.save(colaborador);
             return ResponseEntity.ok(atualizado);
         }).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/colaborador/buscar")
+    public List<Colaborador> buscarPorNome(@RequestParam String nome) {
+        return repository.findByNomeContainingIgnoreCase(nome);
+    }
+
+    @GetMapping("/colaborador/status")
+    public List<Colaborador> buscarPorStatus(@RequestParam Boolean ativo) {
+        return repository.findByAtivo(ativo);
+    }
+
+    @GetMapping("/colaborador/ordenar")
+    public List<Colaborador> ordenarColaboradores(
+            @RequestParam String campo,
+            @RequestParam String ordem) {
+
+        Sort.Direction direction = ordem.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
+
+        if (!campo.equals("nome") && !campo.equals("criadoEm")) {
+            throw new IllegalArgumentException("Campo inválido para ordenação. Use 'nome' ou 'criadoEm'.");
+        }
+
+        return repository.findAll(Sort.by(direction, campo));
     }
 
     @GetMapping("/colaborador/faltas/{id}")
