@@ -61,6 +61,30 @@ public class ColaboradorController {
         return repository.findById(id).get();
     }
 
+    @PutMapping("/colaborador/{id}")
+    public ResponseEntity<Colaborador> atualizarColaborador(@PathVariable Long id, @RequestBody Colaborador colaboradorAtualizado) {
+        return repository.findById(id).map(colaborador -> {
+            if (colaboradorAtualizado.getNome() != null) {
+                colaborador.setNome(colaboradorAtualizado.getNome());
+            }
+            if (colaboradorAtualizado.getEmail() != null) {
+                colaborador.setEmail(colaboradorAtualizado.getEmail());
+            }
+            if (colaboradorAtualizado.getSenhaHash() != null) {
+                colaborador.setSenhaHash(colaboradorAtualizado.getSenhaHash());
+            }
+            if (colaboradorAtualizado.getAtivo() != null) {
+                colaborador.setAtivo(colaboradorAtualizado.getAtivo());
+            }
+            if (colaboradorAtualizado.getSaldoFerias() != null) {
+                colaborador.setSaldoFerias(colaboradorAtualizado.getSaldoFerias());
+            }
+
+            Colaborador atualizado = repository.save(colaborador);
+            return ResponseEntity.ok(atualizado);
+        }).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
     @GetMapping("/colaborador/faltas/{id}")
     public List<Falta> obterFaltasPorColaborador(@PathVariable Long id) {
         return faltaRepository.findByColaboradorId(id);
