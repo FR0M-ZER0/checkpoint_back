@@ -2,6 +2,7 @@ package com.fromzero.checkpoint.controllers;
 
 import com.fromzero.checkpoint.dto.AtualizarHorarioMarcacaoDTO;
 import com.fromzero.checkpoint.dto.MarcacaoDTO;
+import com.fromzero.checkpoint.dto.MarcacaoResponseDTO;
 import com.fromzero.checkpoint.entities.Colaborador;
 import com.fromzero.checkpoint.entities.Marcacao;
 import com.fromzero.checkpoint.entities.Resposta.TipoResposta;
@@ -104,6 +105,11 @@ public class MarcacaoController {
     @GetMapping("/colaborador/{colaboradorId}")
     public List<Marcacao> obterTodasMarcacoesPorColaborador(@PathVariable Long colaboradorId) {
         return marcacaoService.obterTodasMarcacoesPorColaborador(colaboradorId);
+    }
+
+    @GetMapping("/com-nome")
+    public List<MarcacaoResponseDTO> listarMarcacoesComNomes() {
+        return marcacaoService.listarTodasMarcacoesComNomes();
     }
 
     // Obter marcações de um dia específico de um colaborador

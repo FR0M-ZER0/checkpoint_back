@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fromzero.checkpoint.dto.MarcacaoResponseDTO;
 import com.fromzero.checkpoint.entities.Colaborador;
 import com.fromzero.checkpoint.entities.Falta;
 import com.fromzero.checkpoint.entities.Marcacao;
@@ -244,4 +245,28 @@ public class MarcacaoService {
         return String.format("%02dh:%02dmin", horas, minutos);
     }
  
+    private MarcacaoResponseDTO toMarcacaoResponseDTO(Marcacao marcacao) {
+        MarcacaoResponseDTO dto = new MarcacaoResponseDTO();
+        dto.setId(marcacao.getId());
+        dto.setColaboradorId(marcacao.getColaboradorId());
+        dto.setTipo(marcacao.getTipo());
+        dto.setDataHora(marcacao.getDataHora());
+        dto.setProcessada(marcacao.isProcessada());
+
+        Colaborador colaborador = colaboradorRepository.findById(marcacao.getColaboradorId())
+                .orElse(null);
+        if (colaborador != null) {
+            dto.setNomeColaborador(colaborador.getNome());
+        } else {
+            dto.setNomeColaborador("Desconhecido");
+        }
+
+        return dto;
+    }
+
+    public List<MarcacaoResponseDTO> listarTodasMarcacoesComNomes() {
+        return marcacaoRepository.findAll().stream()
+                .map(this::toMarcacaoResponseDTO)
+                .toList();
+    }
 }
