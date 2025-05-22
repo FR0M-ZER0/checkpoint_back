@@ -13,6 +13,7 @@ import com.fromzero.checkpoint.entities.Colaborador;
 import com.fromzero.checkpoint.entities.Falta;
 import com.fromzero.checkpoint.entities.Marcacao;
 import com.fromzero.checkpoint.entities.MarcacaoLog;
+import com.fromzero.checkpoint.entities.Marcacao.TipoMarcacao;
 import com.fromzero.checkpoint.entities.Notificacao.NotificacaoTipo;
 import com.fromzero.checkpoint.entities.Resposta.TipoResposta;
 import com.fromzero.checkpoint.repositories.ColaboradorRepository;
@@ -268,5 +269,19 @@ public class MarcacaoService {
         return marcacaoRepository.findAll().stream()
                 .map(this::toMarcacaoResponseDTO)
                 .toList();
+    }
+
+    public Marcacao atualizarDataHorarioETipoMarcacao(String id, LocalDateTime novaDataHora, TipoMarcacao novoTipo) {
+        Marcacao marcacao = marcacaoRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Marcação não encontrada"));
+
+        if (marcacao.isProcessada()) {
+            throw new RuntimeException("Não é possível alterar uma marcação processada.");
+        }
+
+        marcacao.setDataHora(novaDataHora);
+        marcacao.setTipo(novoTipo);
+
+        return marcacaoRepository.save(marcacao);
     }
 }

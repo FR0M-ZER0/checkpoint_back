@@ -1,6 +1,7 @@
 package com.fromzero.checkpoint.controllers;
 
 import com.fromzero.checkpoint.dto.AtualizarHorarioMarcacaoDTO;
+import com.fromzero.checkpoint.dto.AtualizarMarcacaoDTO;
 import com.fromzero.checkpoint.dto.MarcacaoDTO;
 import com.fromzero.checkpoint.dto.MarcacaoResponseDTO;
 import com.fromzero.checkpoint.entities.Colaborador;
@@ -142,5 +143,24 @@ public class MarcacaoController {
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data) {
         String totalTrabalhado = marcacaoService.calcularTotalTrabalhadoDiaSemFalta(colaboradorId, data);
         return ResponseEntity.ok(totalTrabalhado);
+    }
+
+    @PutMapping("/{id}/data-horario-tipo")
+    public ResponseEntity<Marcacao> atualizarDataHorarioETipoMarcacao(
+            @PathVariable String id,
+            @Valid @RequestBody AtualizarMarcacaoDTO dto) {
+
+        Marcacao marcacaoAtualizada = marcacaoService.atualizarDataHorarioETipoMarcacao(
+            id, 
+            dto.getNovaDataHora(), 
+            dto.getNovoTipo()
+        );
+
+        Colaborador colaborador = colaboradorRepository.findById(marcacaoAtualizada.getColaboradorId())
+                .orElseThrow(() -> new RuntimeException("Colaborador não encontrado"));
+
+        respostaService.criarResposta("A data, horário e tipo do seu ponto foram ajustados", TipoResposta.ponto, colaborador);
+        
+        return ResponseEntity.ok(marcacaoAtualizada);
     }
 }
