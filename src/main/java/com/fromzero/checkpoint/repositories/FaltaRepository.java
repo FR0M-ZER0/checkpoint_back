@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.fromzero.checkpoint.entities.Falta;
 
@@ -23,4 +24,12 @@ public interface FaltaRepository extends JpaRepository<Falta, Long> {
         LocalDateTime startDateTime, 
         LocalDateTime endDateTime
     );
+
+    @Query("SELECT f FROM Falta f WHERE f.colaborador.id = :colaboradorId " +
+       "AND f.criadoEm >= :startOfYear AND f.criadoEm < :startOfNextYear")
+    List<Falta> findByColaboradorIdAndCriadoEmBetweenYearRange(
+    @Param("colaboradorId") Long colaboradorId,
+    @Param("startOfYear") LocalDateTime startOfYear,
+    @Param("startOfNextYear") LocalDateTime startOfNextYear
+);
 }

@@ -4,6 +4,7 @@ import com.fromzero.checkpoint.entities.Falta;
 import com.fromzero.checkpoint.entities.Ferias;
 import com.fromzero.checkpoint.entities.Folga;
 import com.fromzero.checkpoint.entities.Marcacao;
+import com.fromzero.checkpoint.entities.SolicitacaoFerias;
 import com.fromzero.checkpoint.repositories.FaltaRepository;
 import com.fromzero.checkpoint.repositories.FeriasRepository;
 import com.fromzero.checkpoint.repositories.FolgaRepository;
@@ -11,22 +12,32 @@ import com.fromzero.checkpoint.repositories.MarcacaoRepository;
 import com.fromzero.checkpoint.repositories.SolicitacaoAbonoFaltaRepository;
 import com.fromzero.checkpoint.repositories.SolicitacaoFeriasRepository;
 import com.fromzero.checkpoint.repositories.SolicitacaoFolgaRepository;
+import com.fromzero.checkpoint.services.JornadaService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/dias-trabalho")
 public class DiasTrabalhoController {
+
+    private static final Logger log = LoggerFactory.getLogger(DiasTrabalhoController.class);
+
+    @Autowired
+    private JornadaService jornadaService;
 
     @Autowired
     private MarcacaoRepository marcacaoRepository;
@@ -49,45 +60,87 @@ public class DiasTrabalhoController {
     @Autowired
     private SolicitacaoAbonoFaltaRepository solicitacaoAbonoFaltaRepository;
 
-    @GetMapping("/{colaboradorId}")
-    public Map<LocalDate, String> getDiasTrabalho(@PathVariable Long colaboradorId) {
-        Map<LocalDate, String> diasTrabalho = new TreeMap<>(Comparator.reverseOrder());
+@GetMapping("/{colaboradorId}")
+public ResponseEntity<Map<String, String>> getDiasTrabalho(
+        @PathVariable Long colaboradorId,
+        @RequestParam(required = false) Integer ano) {
 
-        List<Marcacao> marcacoes = marcacaoRepository.findByColaboradorId(colaboradorId);
+    int anoParaProcessar = (ano != null) ? ano : LocalDate.now().getYear();
+    log.info("CONTROLLER: Solicitado calendário para Colaborador ID: {} no Ano: {}", colaboradorId, anoParaProcessar);
 
-        Map<LocalDate, List<Marcacao>> marcacoesPorDia = marcacoes.stream()
-                .collect(Collectors.groupingBy(m -> m.getDataHora().toLocalDate()));
+    Map<String, String> diasComStatus = new TreeMap<>(); // Para ordenar as datas "AAAA-MM-DD"
 
-        marcacoesPorDia.entrySet().stream()
-                .filter(entry -> !entry.getValue().isEmpty())
-                .forEach(entry -> diasTrabalho.put(entry.getKey(), "normal"));
+    LocalDate inicioDoAno = LocalDate.of(anoParaProcessar, 1, 1);
+    LocalDate fimDoAno = LocalDate.of(anoParaProcessar, 12, 31);
+    LocalDateTime inicioDoAnoTime = inicioDoAno.atStartOfDay();
+    // Para queries que usam '<' no final do range (ex: criadoEm < dataFinalMaisUmDia)
+    LocalDateTime inicioDoProximoAnoTime = inicioDoAno.plusYears(1).atStartOfDay(); 
 
-        List<Falta> faltas = faltaRepository.findByColaboradorId(colaboradorId);
+    // 1. BUSCAR TODOS OS EVENTOS RELEVANTES PARA O ANO
+    // Certifique-se que os métodos nos repositórios estão corretos e implementados
+    List<Marcacao> todasMarcacoesDoAno = marcacaoRepository.findByColaboradorIdAndDataHoraBetween(
+        colaboradorId, inicioDoAnoTime, fimDoAno.atTime(LocalTime.MAX) // Pega até o fim do último dia
+    );
+    List<Falta> todasFaltasDoAno = faltaRepository.findByColaboradorIdAndCriadoEmBetweenYearRange(
+        colaboradorId, inicioDoAnoTime, inicioDoProximoAnoTime
+    );
+    List<Folga> todasFolgasDoAno = folgaRepository.findByColaboradorIdAndDataBetween(
+        colaboradorId, inicioDoAno, fimDoAno
+    );
+    List<SolicitacaoFerias> todasFeriasAprovadasDoAno = solicitacaoFeriasRepository
+        .findAprovadasByColaboradorIdOverlappingYear(colaboradorId, inicioDoAno, fimDoAno);
 
-        for (Falta falta : faltas) {
-            LocalDate diaFalta = falta.getCriadoEm().toLocalDate();
-            diasTrabalho.put(diaFalta, "falta");
-        }
+    // Mapear para busca rápida dentro do loop diário
+    Map<LocalDate, Boolean> mapaDiasComMarcacao = todasMarcacoesDoAno.stream()
+        .map(m -> m.getDataHora().toLocalDate())
+        .distinct()
+        .collect(Collectors.toMap(date -> date, date -> true));
 
-        List<Folga> folgas = folgaRepository.findByColaboradorId(colaboradorId);
+    Map<LocalDate, Falta> mapaFaltas = todasFaltasDoAno.stream()
+        .collect(Collectors.toMap(
+            f -> f.getCriadoEm().toLocalDate(), // Chave é a data da falta
+            falta -> falta,
+            (f1, f2) -> f1 // Em caso de mais de uma falta no mesmo dia, pega a primeira
+        ));
 
-        for (Folga folga : folgas) {
-            diasTrabalho.put(folga.getData(), "folga");
-        }
-
-        List<Ferias> feriasList = feriasRepository.findByColaboradorId(colaboradorId);
-
-        for (Ferias ferias : feriasList) {
-            LocalDate inicio = ferias.getDataInicio();
-            LocalDate fim = ferias.getDataFim();
-            while (!inicio.isAfter(fim)) {
-                diasTrabalho.put(inicio, "ferias");
-                inicio = inicio.plusDays(1);
+    Map<LocalDate, Folga> mapaFolgas = todasFolgasDoAno.stream()
+        .collect(Collectors.toMap(
+            Folga::getData, 
+            folga -> folga,
+            (f1, f2) -> f1 // Em caso de mais de uma folga no mesmo dia
+        ));
+    
+    Map<LocalDate, SolicitacaoFerias> mapaFerias = new HashMap<>();
+    for (SolicitacaoFerias ferias : todasFeriasAprovadasDoAno) {
+        for (LocalDate d = ferias.getDataInicio(); !d.isAfter(ferias.getDataFim()); d = d.plusDays(1)) {
+            if (d.getYear() == anoParaProcessar) {
+                mapaFerias.put(d, ferias);
             }
         }
-
-        return diasTrabalho;
     }
+
+    // 2. ITERAR POR CADA DIA DO ANO E DEFINIR STATUS COM PRIORIDADE
+    for (LocalDate dataAtual = inicioDoAno; !dataAtual.isAfter(fimDoAno); dataAtual = dataAtual.plusDays(1)) {
+        String statusFinalDoDia = null;
+
+        if (mapaFerias.containsKey(dataAtual)) {
+            statusFinalDoDia = "ferias";
+        } else if (mapaFolgas.containsKey(dataAtual)) {
+            statusFinalDoDia = "folga";
+        } else if (jornadaService.isDiaDeDescansoEscala(colaboradorId, dataAtual)) {
+            statusFinalDoDia = "DESCANSO_ESCALA"; // Status novo
+        } else if (mapaFaltas.containsKey(dataAtual)) {
+            statusFinalDoDia = "falta";
+        } else if (mapaDiasComMarcacao.getOrDefault(dataAtual, false)) {
+            statusFinalDoDia = "normal";
+        }
+        
+        if (statusFinalDoDia != null) {
+            diasComStatus.put(dataAtual.toString(), statusFinalDoDia);
+        }
+    }
+    return ResponseEntity.ok(diasComStatus);
+}
 
     private double calcularHorasTrabalhadas(List<Marcacao> marcacoes) {
         if (marcacoes.size() < 2) return 0;
