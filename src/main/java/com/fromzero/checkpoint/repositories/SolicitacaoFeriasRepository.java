@@ -6,6 +6,8 @@ import org.springframework.data.domain.Pageable; // Import se usar paginação
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,4 +25,14 @@ public interface SolicitacaoFeriasRepository extends JpaRepository<SolicitacaoFe
     @Query("SELECT sf FROM SolicitacaoFerias sf JOIN FETCH sf.colaborador WHERE sf.id = :id")
     Optional<SolicitacaoFerias> findByIdWithColaborador(@Param("id") Long id);
     // ******************************
+
+
+    @Query("SELECT sf FROM SolicitacaoFerias sf LEFT JOIN FETCH sf.colaborador " +
+       "WHERE sf.colaboradorId = :colaboradorId AND sf.status = 'APROVADO' " +
+       "AND sf.dataInicio <= :endDateOfYear AND sf.dataFim >= :startDateOfYear")
+    List<SolicitacaoFerias> findAprovadasByColaboradorIdOverlappingYear(
+    @Param("colaboradorId") Long colaboradorId,
+    @Param("startDateOfYear") LocalDate startDateOfYear,
+    @Param("endDateOfYear") LocalDate endDateOfYear
+);
 }
