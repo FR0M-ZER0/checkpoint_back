@@ -165,7 +165,7 @@ public class FeriasService {
         }
 
          Colaborador colaborador = solicitacao.getColaborador(); // Objeto já carregado
-         long diasSolicitados = ChronoUnit.DAYS.between(solicitacao.getDataInicio(), solicitacao.getDataFim()) + 1;
+         long diasSolicitados = calcularDiasUteis(solicitacao.getDataInicio(), solicitacao.getDataFim());
 
          // *** VERIFICA E ATUALIZA SALDO ***
          if (colaborador.getSaldoFerias() == null || colaborador.getSaldoFerias() < diasSolicitados) { 
@@ -218,4 +218,18 @@ public class FeriasService {
           return date.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"));
       }
       
+      private long calcularDiasUteis(LocalDate inicio, LocalDate fim) {
+          long diasUteis = 0;
+          LocalDate current = inicio;
+          log.info("Calculating days between {} and {}", inicio, fim);
+          while (!current.isAfter(fim)) {
+              int diaDaSemana = current.getDayOfWeek().getValue(); // 1 (Mon) to 7 (Sun)
+              if (diaDaSemana <= 5) { // Only count Monday to Friday
+                  diasUteis++;
+              }
+              current = current.plusDays(1);
+          }
+
+          return diasUteis;
+      }
 } // Fim da classe FeriasService
