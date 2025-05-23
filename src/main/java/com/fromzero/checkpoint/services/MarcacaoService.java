@@ -27,6 +27,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class MarcacaoService {
@@ -283,5 +284,46 @@ public class MarcacaoService {
         marcacao.setTipo(novoTipo);
 
         return marcacaoRepository.save(marcacao);
+    }
+
+    public List<MarcacaoResponseDTO> obterMarcacoesPorDataComNomes(LocalDate data) {
+        LocalDateTime startOfDay = data.atStartOfDay();
+        LocalDateTime endOfDay = data.atTime(LocalTime.MAX);
+        List<Marcacao> marcacoes = marcacaoRepository.findByDataHoraBetween(startOfDay, endOfDay);
+
+        return marcacoes.stream().map(marcacao -> {
+            MarcacaoResponseDTO dto = new MarcacaoResponseDTO();
+            dto.setId(marcacao.getId());
+            dto.setColaboradorId(marcacao.getColaboradorId());
+            dto.setDataHora(marcacao.getDataHora());
+            dto.setTipo(marcacao.getTipo());
+            dto.setProcessada(marcacao.isProcessada());
+
+            colaboradorRepository.findById(marcacao.getColaboradorId())
+                .ifPresent(colaborador -> dto.setNomeColaborador(colaborador.getNome()));
+
+            return dto;
+        }).collect(Collectors.toList());
+    }
+
+    public List<MarcacaoResponseDTO> buscarMarcacoesPorNomeColaborador(String nome) {
+        List<Colaborador> colaboradores = colaboradorRepository.findByNomeContainingIgnoreCase(nome);
+        List<Long> idsColaboradores = colaboradores.stream()
+                .map(Colaborador::getId)
+                .toList();
+
+        List<Marcacao> marcacoes = marcacaoRepository.findByColaboradorIdIn(idsColaboradores);
+
+        return marcacoes.stream()
+                .map(this::toMarcacaoResponseDTO)
+                .toList();
+    }
+
+    public List<MarcacaoResponseDTO> buscarMarcacoesPorTipo(Marcacao.TipoMarcacao tipo) {
+        List<Marcacao> marcacoes = marcacaoRepository.findByTipo(tipo);
+
+        return marcacoes.stream()
+                .map(this::toMarcacaoResponseDTO)
+                .toList();
     }
 }

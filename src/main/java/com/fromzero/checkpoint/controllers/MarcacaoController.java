@@ -163,4 +163,20 @@ public class MarcacaoController {
         
         return ResponseEntity.ok(marcacaoAtualizada);
     }
+
+    @GetMapping("/buscar")
+    public List<MarcacaoResponseDTO> buscarMarcacoesPorNomeColaborador(@RequestParam String nome) {
+        return marcacaoService.buscarMarcacoesPorNomeColaborador(nome);
+    }
+
+    @GetMapping("/buscar-por-tipo")
+    public List<MarcacaoResponseDTO> buscarMarcacoesPorTipo(@RequestParam Marcacao.TipoMarcacao tipo) {
+        return marcacaoService.buscarMarcacoesPorTipo(tipo);
+    }
+
+    @GetMapping("/data/{data}")
+    public List<MarcacaoResponseDTO> obterMarcacoesPorDataComNome(
+            @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data) {
+        return marcacaoService.obterMarcacoesPorDataComNomes(data);
+    }
 }
