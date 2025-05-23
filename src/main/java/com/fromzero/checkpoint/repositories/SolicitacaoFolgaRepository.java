@@ -1,6 +1,7 @@
 package com.fromzero.checkpoint.repositories;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -13,4 +14,8 @@ public interface SolicitacaoFolgaRepository extends JpaRepository<SolicitacaoFol
     List<SolicitacaoFolga> findByColaboradorId(Long colaboradorId);
 
     Optional<SolicitacaoFolga> findByColaboradorIdAndSolFolData(Long colaboradorId, LocalDate solFolData);
+
+    long countBySolFolStatus(String solFolStatus);
+
+    long countByCriadoEmBetween(LocalDateTime start, LocalDateTime end);
 }
