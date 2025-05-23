@@ -326,4 +326,23 @@ public class MarcacaoService {
                 .map(this::toMarcacaoResponseDTO)
                 .toList();
     }
+
+    public Marcacao criarMarcacaoComData(Marcacao marcacao, LocalDateTime dataHora) {
+        validarMarcacaoDuplicada(marcacao);
+
+        marcacao.setDataHora(dataHora);
+        marcacao.setProcessada(false);
+
+        Marcacao novaMarcacao = marcacaoRepository.save(marcacao);
+        logger.info("Marcação registrada com sucesso: {}", novaMarcacao);
+
+        MarcacaoLog log = new MarcacaoLog(marcacao.getColaboradorId(), "CRIACAO", marcacao.getTipo());
+        marcacaoLogRepository.save(log);
+
+        if (marcacao.getTipo() == Marcacao.TipoMarcacao.SAIDA) {
+            calcularTotalTrabalhadoDia(marcacao.getColaboradorId(), dataHora.toLocalDate());
+        }
+
+        return novaMarcacao;
+    }
 }

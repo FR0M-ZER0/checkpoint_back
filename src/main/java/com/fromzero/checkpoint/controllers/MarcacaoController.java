@@ -2,6 +2,7 @@ package com.fromzero.checkpoint.controllers;
 
 import com.fromzero.checkpoint.dto.AtualizarHorarioMarcacaoDTO;
 import com.fromzero.checkpoint.dto.AtualizarMarcacaoDTO;
+import com.fromzero.checkpoint.dto.MarcacaoComDataDTO;
 import com.fromzero.checkpoint.dto.MarcacaoDTO;
 import com.fromzero.checkpoint.dto.MarcacaoResponseDTO;
 import com.fromzero.checkpoint.entities.Colaborador;
@@ -178,5 +179,22 @@ public class MarcacaoController {
     public List<MarcacaoResponseDTO> obterMarcacoesPorDataComNome(
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data) {
         return marcacaoService.obterMarcacoesPorDataComNomes(data);
+    }
+
+    @PostMapping("/com-data")
+    public ResponseEntity<Marcacao> criarMarcacaoComData(@Valid @RequestBody MarcacaoComDataDTO marcacaoDTO) {
+        try {
+            Marcacao.TipoMarcacao.valueOf(marcacaoDTO.getTipo().toString().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        Marcacao novaMarcacao = new Marcacao();
+        novaMarcacao.setColaboradorId(marcacaoDTO.getColaboradorId());
+        novaMarcacao.setTipo(marcacaoDTO.getTipo());
+        novaMarcacao.setProcessada(false);
+
+        Marcacao marcacaoSalva = marcacaoService.criarMarcacaoComData(novaMarcacao, marcacaoDTO.getDataHora());
+        return ResponseEntity.status(201).body(marcacaoSalva);
     }
 }
