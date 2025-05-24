@@ -1,5 +1,6 @@
 package com.fromzero.checkpoint.controllers;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -88,5 +89,21 @@ public class FaltaController {
                 return ResponseEntity.ok().build();
             })
             .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/falta/diferenca-dia")
+    public ResponseEntity<Integer> diferencaFaltasEntreHojeEOntem() {
+        LocalDateTime inicioHoje = LocalDateTime.now().toLocalDate().atStartOfDay();
+        LocalDateTime fimHoje = inicioHoje.plusDays(1);
+
+        LocalDateTime inicioOntem = inicioHoje.minusDays(1);
+        LocalDateTime fimOntem = inicioHoje;
+
+        int faltasHoje = repository.countByCriadoEmBetween(inicioHoje, fimHoje);
+        int faltasOntem = repository.countByCriadoEmBetween(inicioOntem, fimOntem);
+
+        int diferenca = faltasHoje - faltasOntem;
+
+        return ResponseEntity.ok(diferenca);
     }
 }

@@ -23,4 +23,6 @@ public interface FaltaRepository extends JpaRepository<Falta, Long> {
         LocalDateTime startDateTime, 
         LocalDateTime endDateTime
     );
+
+    int countByCriadoEmBetween(LocalDateTime inicio, LocalDateTime fim);
 }
