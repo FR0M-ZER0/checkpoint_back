@@ -29,4 +29,6 @@ public interface SolicitacaoFeriasRepository extends JpaRepository<SolicitacaoFe
     long countByStatus(String status);
 
     long countByCriadoEmBetween(LocalDateTime start, LocalDateTime end);
+
+    List<SolicitacaoFerias> findTop4ByStatusOrderByCriadoEmDesc(String status);
 }

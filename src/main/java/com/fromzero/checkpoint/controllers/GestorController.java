@@ -3,7 +3,10 @@ package com.fromzero.checkpoint.controllers;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -14,6 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fromzero.checkpoint.dto.SolicitacaoGenericaDTO;
 import com.fromzero.checkpoint.dto.SolicitacaoResumoDTO;
 import com.fromzero.checkpoint.entities.Gestor;
 import com.fromzero.checkpoint.entities.SolicitacaoAbonoFalta;
@@ -109,5 +113,61 @@ public class GestorController {
         );
 
         return ResponseEntity.ok(dto);
+    }
+
+    @GetMapping("/ultimas-solicitacoes-pendentes")
+    public ResponseEntity<List<SolicitacaoGenericaDTO>> obterUltimasSolicitacoesPendentes() {
+        List<SolicitacaoGenericaDTO> todas = new ArrayList<>();
+
+        folgaRepository.findTop4BySolFolStatusOrderByCriadoEmDesc("pendente").forEach(f -> {
+            todas.add(new SolicitacaoGenericaDTO(
+                    "FOLGA",
+                    f.getSolFolId().longValue(),
+                    f.getSolFolStatus(),
+                    f.getCriadoEm(),
+                    f.getColaborador() != null ? f.getColaborador().getNome() : null
+            ));
+        });
+
+        feriasRepository.findTop4ByStatusOrderByCriadoEmDesc("pendente").forEach(f -> {
+            todas.add(new SolicitacaoGenericaDTO(
+                    "FERIAS",
+                    f.getId(),
+                    f.getStatus(),
+                    f.getCriadoEm(),
+                    f.getColaborador() != null ? f.getColaborador().getNome() : null
+            ));
+        });
+
+        abonoRepository.findTop4ByStatusOrderByCriadoEmDesc(SolicitacaoAbonoFalta.SolicitacaoStatus.Pendente).forEach(f -> {
+            todas.add(new SolicitacaoGenericaDTO(
+                    "ABONO",
+                    f.getId(),
+                    f.getStatus().name(),
+                    f.getCriadoEm(),
+                    f.getFalta() != null && f.getFalta().getColaborador() != null ? 
+                        f.getFalta().getColaborador().getNome() : null
+            ));
+        });
+
+        ajusteRepository.findTop4ByStatusOrderByCriadoEmDesc(SolicitacaoAjustePonto.StatusMarcacao.pendente).forEach(f -> {
+            todas.add(new SolicitacaoGenericaDTO(
+                    "AJUSTE",
+                    f.getId(),
+                    f.getStatus().name(),
+                    f.getCriadoEm(),
+                    f.getColaboradorNome()  // já tem direto
+            ));
+        });
+
+        List<SolicitacaoGenericaDTO> ultimasQuatro = todas.stream()
+                .sorted(Comparator.comparing(
+                        SolicitacaoGenericaDTO::getCriadoEm,
+                        Comparator.nullsLast(Comparator.naturalOrder())
+                ).reversed())
+                .limit(4)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(ultimasQuatro);
     }
 }

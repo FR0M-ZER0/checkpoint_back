@@ -18,4 +18,6 @@ public interface SolicitacaoFolgaRepository extends JpaRepository<SolicitacaoFol
     long countBySolFolStatus(String solFolStatus);
 
     long countByCriadoEmBetween(LocalDateTime start, LocalDateTime end);
+
+    List<SolicitacaoFolga> findTop4BySolFolStatusOrderByCriadoEmDesc(String status);
 }

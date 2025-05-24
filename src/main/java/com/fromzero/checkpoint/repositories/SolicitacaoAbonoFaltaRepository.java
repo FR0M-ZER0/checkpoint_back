@@ -1,6 +1,7 @@
 package com.fromzero.checkpoint.repositories;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -13,4 +14,6 @@ public interface SolicitacaoAbonoFaltaRepository extends JpaRepository<Solicitac
     long countByStatus(SolicitacaoAbonoFalta.SolicitacaoStatus status);
 
     long countByCriadoEmBetween(LocalDateTime start, LocalDateTime end);
+
+    List<SolicitacaoAbonoFalta> findTop4ByStatusOrderByCriadoEmDesc(SolicitacaoAbonoFalta.SolicitacaoStatus status);
 }

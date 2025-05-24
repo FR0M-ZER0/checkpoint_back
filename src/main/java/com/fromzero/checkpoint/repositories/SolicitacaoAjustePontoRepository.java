@@ -13,4 +13,6 @@ public interface SolicitacaoAjustePontoRepository extends MongoRepository<Solici
     long countByStatus(SolicitacaoAjustePonto.StatusMarcacao status);
 
     long countByCriadoEmBetween(LocalDateTime start, LocalDateTime end);
+
+    List<SolicitacaoAjustePonto> findTop4ByStatusOrderByCriadoEmDesc(SolicitacaoAjustePonto.StatusMarcacao status);
 }
