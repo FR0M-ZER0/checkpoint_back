@@ -22,8 +22,10 @@ import com.fromzero.checkpoint.repositories.ColaboradorRepository;
 import com.fromzero.checkpoint.repositories.FaltaRepository;
 import com.fromzero.checkpoint.repositories.NotificacaoRepository;
 import com.fromzero.checkpoint.repositories.RespostaRepository;
+import com.fromzero.checkpoint.services.EmailService;
 import com.fromzero.checkpoint.services.NotificacaoService;
 import com.fromzero.checkpoint.services.RespostaService;
+import com.fromzero.checkpoint.services.TwoFactorAuthService;
 
 
 
@@ -32,6 +34,12 @@ public class ColaboradorController {
     @Autowired
     private ColaboradorRepository repository;
 
+    @Autowired
+    private EmailService emailService;
+
+    @Autowired
+    private TwoFactorAuthService authService;
+    
     @Autowired
     private FaltaRepository faltaRepository;
 
@@ -159,10 +167,26 @@ public class ColaboradorController {
             () -> new RuntimeException("Colaborador não encontrado")
         );
 
-         if (colaborador.getSenhaHash().equals(c.getSenhaHash())) {
-             return ResponseEntity.ok(colaborador);
-         } else {
+        if (colaborador.getSenhaHash().equals(c.getSenhaHash())) {
+            // Enviar código 2FA por e-mail
+            String codigo = authService.gerarCodigo(c.getEmail());
+            emailService.enviarCodigoVerificacao(c.getEmail(), codigo);
+            return ResponseEntity.status(HttpStatus.ACCEPTED)
+                .body("Código de verificação enviado para o e-mail.");
+        } else {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Senha inválida");
-         }
+        }
     }
+
+    @PostMapping("/verificar-codigo")
+    public ResponseEntity<?> verificarCodigo(@RequestParam String email, @RequestParam String codigo) {
+        if (authService.verificarCodigo(email, codigo)) {
+            Colaborador colaborador = repository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Colaborador não encontrado"));
+            return ResponseEntity.ok(colaborador); // Retorna colaborador após validação
+        } else {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Código inválido.");
+        }
+    }
+    
 }
