@@ -3,6 +3,7 @@ package com.fromzero.checkpoint.services;
 import com.fromzero.checkpoint.dto.HorasExtrasAcumuladasDTO;
 import com.fromzero.checkpoint.dto.HorasExtrasDTO;
 import com.fromzero.checkpoint.dto.HorasExtrasManualDTO;
+import com.fromzero.checkpoint.dto.ResumoHorasExtrasMensalDTO;
 import com.fromzero.checkpoint.entities.Colaborador;
 import com.fromzero.checkpoint.entities.Gestor;
 import com.fromzero.checkpoint.entities.HorasExtras;
@@ -231,5 +232,36 @@ public class HorasExtrasService {
     private String capitalize(String str) {
         if (str == null || str.isEmpty()) return str;
         return str.substring(0, 1).toUpperCase() + str.substring(1).toLowerCase();
+    }
+
+    public ResumoHorasExtrasMensalDTO calcularResumoMensalHorasExtras() {
+        LocalDateTime agora = LocalDateTime.now();
+        
+        int ano = agora.getYear();
+        int mes = agora.getMonthValue();
+
+        LocalDateTime inicioMesAtual = LocalDateTime.of(ano, mes, 1, 0, 0);
+        LocalDateTime fimMesAtual = inicioMesAtual.withDayOfMonth(inicioMesAtual.toLocalDate().lengthOfMonth()).withHour(23).withMinute(59);
+
+        LocalDateTime inicioMesAnterior = inicioMesAtual.minusMonths(1).withDayOfMonth(1);
+        LocalDateTime fimMesAnterior = inicioMesAnterior.withDayOfMonth(inicioMesAnterior.toLocalDate().lengthOfMonth()).withHour(23).withMinute(59);
+
+        List<HorasExtras> horasMesAtual = horasExtrasRepository.findByStatusAndCriadoEmBetween(
+                HorasExtras.Status.Aprovado, inicioMesAtual, fimMesAtual);
+
+        BigDecimal totalMesAtual = horasMesAtual.stream()
+                .map(h -> converterSaldoParaBigDecimal(h.getSaldo()))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        List<HorasExtras> horasMesAnterior = horasExtrasRepository.findByStatusAndCriadoEmBetween(
+                HorasExtras.Status.Aprovado, inicioMesAnterior, fimMesAnterior);
+
+        BigDecimal totalMesAnterior = horasMesAnterior.stream()
+                .map(h -> converterSaldoParaBigDecimal(h.getSaldo()))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal diferenca = totalMesAtual.subtract(totalMesAnterior);
+
+        return new ResumoHorasExtrasMensalDTO(totalMesAtual, diferenca);
     }
 }

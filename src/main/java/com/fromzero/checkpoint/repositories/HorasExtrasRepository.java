@@ -19,4 +19,6 @@ public interface HorasExtrasRepository extends JpaRepository<HorasExtras, Long> 
             LocalDateTime inicio,
             LocalDateTime fim
     );
+
+    List<HorasExtras> findByStatusAndCriadoEmBetween(HorasExtras.Status status, LocalDateTime inicio, LocalDateTime fim);
 }

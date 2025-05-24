@@ -2,8 +2,10 @@ package com.fromzero.checkpoint.controllers;
 
 
 import com.fromzero.checkpoint.dto.HorasExtrasAcumuladasDTO;
+import com.fromzero.checkpoint.dto.HorasExtrasComparativoDTO;
 import com.fromzero.checkpoint.dto.HorasExtrasDTO;
 import com.fromzero.checkpoint.dto.HorasExtrasManualDTO;
+import com.fromzero.checkpoint.dto.ResumoHorasExtrasMensalDTO;
 import com.fromzero.checkpoint.entities.Folga;
 import com.fromzero.checkpoint.entities.HorasExtras;
 import com.fromzero.checkpoint.repositories.FolgaRepository;
@@ -86,5 +88,11 @@ public class HorasExtrasController {
         novaHoraExtra.setCriadoEm(LocalDateTime.now());
         repository.save(novaHoraExtra);
         return ResponseEntity.ok("Horas extras criadas com sucesso!");
+    }
+
+    @GetMapping("/resumo-mensal")
+    public ResponseEntity<ResumoHorasExtrasMensalDTO> getResumoMensalHorasExtras() {
+        ResumoHorasExtrasMensalDTO resumo = horasExtrasService.calcularResumoMensalHorasExtras();
+        return ResponseEntity.ok(resumo);
     }
 }
