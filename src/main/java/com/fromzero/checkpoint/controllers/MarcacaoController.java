@@ -5,6 +5,7 @@ import com.fromzero.checkpoint.dto.AtualizarMarcacaoDTO;
 import com.fromzero.checkpoint.dto.MarcacaoComDataDTO;
 import com.fromzero.checkpoint.dto.MarcacaoDTO;
 import com.fromzero.checkpoint.dto.MarcacaoResponseDTO;
+import com.fromzero.checkpoint.dto.UltimaMarcacaoResumoDTO;
 import com.fromzero.checkpoint.entities.Colaborador;
 import com.fromzero.checkpoint.entities.Marcacao;
 import com.fromzero.checkpoint.entities.Resposta.TipoResposta;
@@ -196,5 +197,10 @@ public class MarcacaoController {
 
         Marcacao marcacaoSalva = marcacaoService.criarMarcacaoComData(novaMarcacao, marcacaoDTO.getDataHora());
         return ResponseEntity.status(201).body(marcacaoSalva);
+    }
+
+    @GetMapping("/ultimas-hoje")
+    public List<UltimaMarcacaoResumoDTO> ultimasMarcacoesHoje() {
+        return marcacaoService.ultimasMarcacoesDeHoje(3);
     }
 }

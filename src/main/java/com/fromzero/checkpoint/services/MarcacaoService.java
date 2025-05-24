@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fromzero.checkpoint.dto.MarcacaoResponseDTO;
+import com.fromzero.checkpoint.dto.UltimaMarcacaoResumoDTO;
 import com.fromzero.checkpoint.entities.Colaborador;
 import com.fromzero.checkpoint.entities.Falta;
 import com.fromzero.checkpoint.entities.Marcacao;
@@ -25,7 +26,9 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -344,5 +347,79 @@ public class MarcacaoService {
         }
 
         return novaMarcacao;
+    }
+
+    public List<UltimaMarcacaoResumoDTO> ultimasMarcacoesDeHoje(int quantidade) {
+        LocalDate hoje = LocalDate.now();
+
+        List<Marcacao> marcacoesHoje = marcacaoRepository.findByDataHoraBetween(
+            hoje.atStartOfDay(),
+            hoje.plusDays(1).atStartOfDay()
+        );
+
+        Map<Long, List<Marcacao>> marcacoesPorColaborador = marcacoesHoje.stream()
+            .collect(Collectors.groupingBy(Marcacao::getColaboradorId));
+
+        List<Map.Entry<Long, LocalDateTime>> ultimasMarcacoes = marcacoesPorColaborador.entrySet().stream()
+            .map(entry -> {
+                LocalDateTime ultimaDataHora = entry.getValue().stream()
+                    .map(Marcacao::getDataHora)
+                    .max(LocalDateTime::compareTo)
+                    .orElse(LocalDateTime.MIN);
+                return Map.entry(entry.getKey(), ultimaDataHora);
+            })
+            .sorted((e1, e2) -> e2.getValue().compareTo(e1.getValue()))
+            .limit(quantidade)
+            .collect(Collectors.toList());
+
+        List<UltimaMarcacaoResumoDTO> resultado = new ArrayList<>();
+
+        for (Map.Entry<Long, LocalDateTime> entry : ultimasMarcacoes) {
+            Long colaboradorId = entry.getKey();
+            Colaborador colaborador = colaboradorRepository.findById(colaboradorId)
+                .orElseThrow(() -> new RuntimeException("Colaborador não encontrado"));
+
+            List<Marcacao> marcacoesDoColaborador = marcacoesPorColaborador.get(colaboradorId);
+
+            String entrada = obterHorarioPorTipo(marcacoesDoColaborador, Marcacao.TipoMarcacao.ENTRADA);
+            String pausa = obterHorarioPorTipo(marcacoesDoColaborador, Marcacao.TipoMarcacao.PAUSA);
+            String retomada = obterHorarioPorTipo(marcacoesDoColaborador, Marcacao.TipoMarcacao.RETOMADA);
+            String saida = obterHorarioPorTipo(marcacoesDoColaborador, Marcacao.TipoMarcacao.SAIDA);
+
+            String total = calcularTotalHoras(marcacoesDoColaborador);
+
+            resultado.add(new UltimaMarcacaoResumoDTO(
+                colaborador.getNome(),
+                entrada,
+                pausa,
+                retomada,
+                saida,
+                total
+            ));
+        }
+
+        return resultado;
+    }
+
+    private String obterHorarioPorTipo(List<Marcacao> marcacoes, Marcacao.TipoMarcacao tipo) {
+        return marcacoes.stream()
+            .filter(m -> m.getTipo() == tipo)
+            .map(m -> m.getDataHora().toLocalTime().toString())
+            .findFirst()
+            .orElse("-");
+    }
+
+    private String calcularTotalHoras(List<Marcacao> marcacoes) {
+        Optional<LocalDate> dataOptional = marcacoes.stream().map(m -> m.getDataHora().toLocalDate()).findFirst();
+        if (dataOptional.isEmpty()) return "0h";
+
+        Optional<Marcacao> entradaOpt = marcacoes.stream().filter(m -> m.getTipo() == Marcacao.TipoMarcacao.ENTRADA).findFirst();
+        Optional<Marcacao> saidaOpt = marcacoes.stream().filter(m -> m.getTipo() == Marcacao.TipoMarcacao.SAIDA).findFirst();
+
+        if (entradaOpt.isPresent() && saidaOpt.isPresent()) {
+            long horas = java.time.Duration.between(entradaOpt.get().getDataHora(), saidaOpt.get().getDataHora()).toHours();
+            return horas + "h";
+        }
+        return "0h";
     }
 }
