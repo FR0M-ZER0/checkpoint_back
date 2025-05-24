@@ -1,5 +1,6 @@
 package com.fromzero.checkpoint.repositories;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -14,4 +15,5 @@ public interface ColaboradorRepository extends JpaRepository<Colaborador, Long> 
     List<Colaborador> findByNomeContainingIgnoreCase(String nome);
     List<Colaborador> findByAtivo(Boolean ativo);
     List<Colaborador> findAll(Sort sort);
+    int countByAtivoIsTrueAndCriadoEmBetween(LocalDateTime inicio, LocalDateTime fim);
 }

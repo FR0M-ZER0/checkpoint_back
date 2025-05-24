@@ -1,5 +1,6 @@
 package com.fromzero.checkpoint.controllers;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -164,5 +165,20 @@ public class ColaboradorController {
          } else {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Senha inválida");
          }
+    }
+
+    @GetMapping("/colaborador/diferenca-ativos-mes")
+    public ResponseEntity<Integer> diferencaColaboradoresAtivosEntreMeses() {
+        LocalDateTime inicioMesAtual = LocalDateTime.now().withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
+        LocalDateTime inicioMesPassado = inicioMesAtual.minusMonths(1);
+        LocalDateTime fimMesPassado = inicioMesAtual.minusSeconds(1);
+        LocalDateTime fimMesAtual = inicioMesAtual.plusMonths(1).minusSeconds(1);
+
+        int ativosMesAtual = repository.countByAtivoIsTrueAndCriadoEmBetween(inicioMesAtual, fimMesAtual);
+        int ativosMesPassado = repository.countByAtivoIsTrueAndCriadoEmBetween(inicioMesPassado, fimMesPassado);
+
+        int diferenca = ativosMesAtual - ativosMesPassado;
+
+        return ResponseEntity.ok(diferenca);
     }
 }
