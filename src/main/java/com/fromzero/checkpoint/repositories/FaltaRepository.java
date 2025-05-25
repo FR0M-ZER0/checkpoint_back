@@ -1,13 +1,13 @@
 package com.fromzero.checkpoint.repositories;
 
-import java.time.LocalDateTime;
-import java.util.List;
-
+import com.fromzero.checkpoint.entities.Falta;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-
-import com.fromzero.checkpoint.entities.Falta;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 
 public interface FaltaRepository extends JpaRepository<Falta, Long> {
     List<Falta> findByColaboradorId(Long colaboradorId);
@@ -32,4 +32,9 @@ public interface FaltaRepository extends JpaRepository<Falta, Long> {
     @Param("startOfYear") LocalDateTime startOfYear,
     @Param("startOfNextYear") LocalDateTime startOfNextYear
 );
+    @Query("SELECT f FROM Falta f WHERE f.colaborador.id = :colaboradorId AND DATE(f.criadoEm) = :date")
+    Optional<Falta> findByColaboradorIdAndCriadoEmOnDate(
+        @Param("colaboradorId") Long colaboradorId, 
+        @Param("date") LocalDate date
+    );
 }

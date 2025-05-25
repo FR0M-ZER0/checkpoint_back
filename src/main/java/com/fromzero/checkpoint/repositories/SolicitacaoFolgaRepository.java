@@ -13,4 +13,5 @@ public interface SolicitacaoFolgaRepository extends JpaRepository<SolicitacaoFol
     List<SolicitacaoFolga> findByColaboradorId(Long colaboradorId);
 
     Optional<SolicitacaoFolga> findByColaboradorIdAndSolFolData(Long colaboradorId, LocalDate solFolData);
+    
 }

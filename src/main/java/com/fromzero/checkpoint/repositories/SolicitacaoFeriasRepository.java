@@ -34,5 +34,15 @@ public interface SolicitacaoFeriasRepository extends JpaRepository<SolicitacaoFe
     @Param("colaboradorId") Long colaboradorId,
     @Param("startDateOfYear") LocalDate startDateOfYear,
     @Param("endDateOfYear") LocalDate endDateOfYear
+
+
+    
 );
+    @Query("SELECT sf FROM SolicitacaoFerias sf " +
+           "WHERE sf.colaboradorId = :colaboradorId AND sf.status = 'APROVADO' " +
+           "AND :date BETWEEN sf.dataInicio AND sf.dataFim")
+    Optional<SolicitacaoFerias> findAprovadaByColaboradorIdAndDateBetween(
+        @Param("colaboradorId") Long colaboradorId,
+        @Param("date") LocalDate date
+    );
 }
