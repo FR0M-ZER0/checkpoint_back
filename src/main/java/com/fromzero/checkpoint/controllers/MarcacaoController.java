@@ -5,6 +5,7 @@ import com.fromzero.checkpoint.dto.AtualizarMarcacaoDTO;
 import com.fromzero.checkpoint.dto.MarcacaoComDataDTO;
 import com.fromzero.checkpoint.dto.MarcacaoDTO;
 import com.fromzero.checkpoint.dto.MarcacaoResponseDTO;
+import com.fromzero.checkpoint.dto.MarcacoesPorDiaDTO;
 import com.fromzero.checkpoint.dto.UltimaMarcacaoResumoDTO;
 import com.fromzero.checkpoint.entities.Colaborador;
 import com.fromzero.checkpoint.entities.Marcacao;
@@ -202,5 +203,10 @@ public class MarcacaoController {
     @GetMapping("/ultimas-hoje")
     public List<UltimaMarcacaoResumoDTO> ultimasMarcacoesHoje() {
         return marcacaoService.ultimasMarcacoesDeHoje(3);
+    }
+
+    @GetMapping("/marcacoes-por-dia")
+    public List<MarcacoesPorDiaDTO> marcacoesPorDia(@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data) {
+        return marcacaoService.marcacoesPorDia(data);
     }
 }

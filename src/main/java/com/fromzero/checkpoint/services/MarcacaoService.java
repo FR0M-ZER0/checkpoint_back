@@ -8,7 +8,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fromzero.checkpoint.controllers.FeriasController;
 import com.fromzero.checkpoint.dto.MarcacaoResponseDTO;
+import com.fromzero.checkpoint.dto.MarcacaoResumoDTO;
+import com.fromzero.checkpoint.dto.MarcacoesPorDiaDTO;
 import com.fromzero.checkpoint.dto.UltimaMarcacaoResumoDTO;
 import com.fromzero.checkpoint.entities.Colaborador;
 import com.fromzero.checkpoint.entities.Falta;
@@ -19,6 +22,8 @@ import com.fromzero.checkpoint.entities.Notificacao.NotificacaoTipo;
 import com.fromzero.checkpoint.entities.Resposta.TipoResposta;
 import com.fromzero.checkpoint.repositories.ColaboradorRepository;
 import com.fromzero.checkpoint.repositories.FaltaRepository;
+import com.fromzero.checkpoint.repositories.FeriasRepository;
+import com.fromzero.checkpoint.repositories.FolgaRepository;
 import com.fromzero.checkpoint.repositories.MarcacaoLogRepository;
 import com.fromzero.checkpoint.repositories.MarcacaoRepository;
 
@@ -27,6 +32,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -45,6 +51,12 @@ public class MarcacaoService {
 
     @Autowired 
     private FaltaRepository faltaRepository;
+
+    @Autowired
+    private FolgaRepository folgaRepository;
+
+    @Autowired
+    private FeriasRepository feriasRepository;
 
     @Autowired
     private ColaboradorRepository colaboradorRepository;
@@ -422,4 +434,68 @@ public class MarcacaoService {
         }
         return "0h";
     }
+
+    public List<MarcacoesPorDiaDTO> marcacoesPorDia(LocalDate data) {
+        if (data == null) {
+            data = LocalDate.now();
+        }
+
+        List<Marcacao> marcacoes = marcacaoRepository.findByDataHoraBetween(
+            data.atStartOfDay(),
+            data.plusDays(1).atStartOfDay()
+        );
+
+        Map<Long, List<Marcacao>> marcacoesPorColaborador = marcacoes.stream()
+            .collect(Collectors.groupingBy(Marcacao::getColaboradorId));
+
+        List<Colaborador> colaboradores = colaboradorRepository.findAll();
+
+        List<MarcacoesPorDiaDTO> resultado = new ArrayList<>();
+
+        for (Colaborador colaborador : colaboradores) {
+            String status = "PRESENTE";
+
+            boolean temFolga = folgaRepository.existsByColaboradorIdAndData(colaborador.getId(), data);
+            if (temFolga) {
+                status = "FOLGA";
+            }
+
+            boolean emFerias = feriasRepository.existsByColaboradorIdAndData(colaborador.getId(), data);
+            if (emFerias) {
+                status = "FÉRIAS";
+            }
+
+            boolean temFalta = faltaRepository.existsByColaboradorIdAndData(colaborador.getId(), data);
+            if (temFalta) {
+                status = "FALTA";
+            }
+
+            List<MarcacaoResumoDTO> marcacoesResumo = new ArrayList<>();
+
+            if (status.equals("PRESENTE")) {
+                List<Marcacao> marcacoesDoColaborador = marcacoesPorColaborador.getOrDefault(colaborador.getId(), new ArrayList<>());
+
+                for (Marcacao.TipoMarcacao tipo : Marcacao.TipoMarcacao.values()) {
+                    String horario = marcacoesDoColaborador.stream()
+                        .filter(m -> m.getTipo() == tipo)
+                        .map(m -> m.getDataHora().toLocalTime().toString())
+                        .findFirst()
+                        .orElse("--:--");
+
+                    marcacoesResumo.add(new MarcacaoResumoDTO(tipo.name(), horario));
+                }
+            } else {
+                marcacoesResumo.add(new MarcacaoResumoDTO(status, "--:--"));
+            }
+
+            resultado.add(new MarcacoesPorDiaDTO(
+                colaborador.getNome(),
+                status,
+                marcacoesResumo
+            ));
+        }
+
+        return resultado;
+    }
+
 }

@@ -1,10 +1,12 @@
 package com.fromzero.checkpoint.repositories;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.fromzero.checkpoint.entities.Falta;
 
@@ -25,4 +27,7 @@ public interface FaltaRepository extends JpaRepository<Falta, Long> {
     );
 
     int countByCriadoEmBetween(LocalDateTime inicio, LocalDateTime fim);
+
+    @Query("SELECT CASE WHEN COUNT(f) > 0 THEN true ELSE false END FROM Falta f WHERE f.colaborador.id = :colaboradorId AND DATE(f.criadoEm) = :data")
+    boolean existsByColaboradorIdAndData(@Param("colaboradorId") Long colaboradorId, @Param("data") LocalDate data);
 }
