@@ -1,16 +1,20 @@
 package com.fromzero.checkpoint.repositories;
 
 import com.fromzero.checkpoint.entities.Ferias;
+import com.fromzero.checkpoint.entities.Marcacao;
 
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface FeriasRepository extends JpaRepository<Ferias, Long> {
-    
+	
+	List<Ferias> findByColaboradorIdAndDataInicioLessThanEqualAndDataFimGreaterThanEqual(Long colaboradorId, LocalDate dataInicio, LocalDate dataFim);
+	
     List<Ferias> findByColaboradorId(Long colaboradorId);
     
     // Adicione este método
