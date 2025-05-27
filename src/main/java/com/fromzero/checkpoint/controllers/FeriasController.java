@@ -1,13 +1,19 @@
 package com.fromzero.checkpoint.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import com.fromzero.checkpoint.services.FeriasService;
 import com.fromzero.checkpoint.services.NotificacaoService;
+import com.fromzero.checkpoint.services.RelatorioFeriasService;
+import com.fromzero.checkpoint.services.RelatorioMarcacoesService;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -23,6 +29,9 @@ import com.fromzero.checkpoint.repositories.FeriasRepository;
 // ***** IMPORTS CORRIGIDOS/ADICIONADOS *****
 import com.fromzero.checkpoint.entities.SolicitacaoAbonoFerias;
 import com.fromzero.checkpoint.entities.SolicitacaoFerias; // Precisa desta entidade!
+
+import java.io.ByteArrayInputStream;
+import java.time.LocalDate;
 // Ferias não é mais necessário como tipo de retorno ou parâmetro para /agendar
 import java.util.List;
 // import com.fromzero.checkpoint.entities.Ferias;
@@ -49,6 +58,9 @@ public class FeriasController {
 
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
+    
+    @Autowired
+    private RelatorioFeriasService relatorioFeriasService;
 
     @GetMapping("/saldo")
     public ResponseEntity<?> getSaldoFerias(@RequestParam Long colaboradorId) {
@@ -173,6 +185,24 @@ public class FeriasController {
 
         messagingTemplate.convertAndSend("/topic/solicitacoes", f);
         return repository.save(f);
+    }
+    
+    @GetMapping("/relatorio-ferias")
+    public ResponseEntity<InputStreamResource> gerarRelatorio(
+            @RequestParam(required = false) Long colaboradorId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataInicio,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim
+    ) throws Exception {
+        ByteArrayInputStream bis = relatorioFeriasService.gerarRelatorio(colaboradorId, dataInicio, dataFim);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Disposition", "inline; filename=relatorio-marcacoes.pdf");
+
+        return ResponseEntity
+                .ok()
+                .headers(headers)
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(new InputStreamResource(bis));
     }
 
     @GetMapping("/saldo-calculado")
