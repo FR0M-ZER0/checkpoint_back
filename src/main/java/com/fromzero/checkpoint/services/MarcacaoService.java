@@ -26,7 +26,13 @@ import com.fromzero.checkpoint.repositories.FeriasRepository;
 import com.fromzero.checkpoint.repositories.FolgaRepository;
 import com.fromzero.checkpoint.repositories.MarcacaoLogRepository;
 import com.fromzero.checkpoint.repositories.MarcacaoRepository;
+import com.lowagie.text.Document;
+import com.lowagie.text.Font;
+import com.lowagie.text.Paragraph;
+import com.lowagie.text.pdf.PdfWriter;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -497,5 +503,4 @@ public class MarcacaoService {
 
         return resultado;
     }
-
 }

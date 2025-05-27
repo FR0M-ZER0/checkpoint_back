@@ -14,16 +14,21 @@ import com.fromzero.checkpoint.repositories.ColaboradorRepository;
 import com.fromzero.checkpoint.repositories.MarcacaoRepository;
 import com.fromzero.checkpoint.repositories.RespostaRepository;
 import com.fromzero.checkpoint.services.MarcacaoService;
+import com.fromzero.checkpoint.services.RelatorioMarcacoesService;
 import com.fromzero.checkpoint.services.RespostaService;
 
 import jakarta.validation.Valid;
 
+import java.io.ByteArrayInputStream;
 import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
 @RestController
@@ -44,6 +49,9 @@ public class MarcacaoController {
 
     @Autowired
     private ColaboradorRepository colaboradorRepository;
+
+    @Autowired
+    private RelatorioMarcacoesService relatorioMarcacoesService;
 
     // Listar todas as marcações
     @GetMapping()
@@ -208,5 +216,23 @@ public class MarcacaoController {
     @GetMapping("/marcacoes-por-dia")
     public List<MarcacoesPorDiaDTO> marcacoesPorDia(@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data) {
         return marcacaoService.marcacoesPorDia(data);
+    }
+
+    @GetMapping("/relatorio-marcacoes")
+    public ResponseEntity<InputStreamResource> gerarRelatorio(
+            @RequestParam(required = false) Long colaboradorId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataInicio,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim
+    ) throws Exception {
+        ByteArrayInputStream bis = relatorioMarcacoesService.gerarRelatorio(colaboradorId, dataInicio, dataFim);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Disposition", "inline; filename=relatorio-marcacoes.pdf");
+
+        return ResponseEntity
+                .ok()
+                .headers(headers)
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(new InputStreamResource(bis));
     }
 }
