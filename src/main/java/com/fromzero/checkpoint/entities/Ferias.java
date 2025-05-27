@@ -3,6 +3,7 @@ package com.fromzero.checkpoint.entities;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
 @Entity
@@ -32,4 +33,12 @@ public class Ferias {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "colaborador_id", insertable = false, updatable = false)
     private Colaborador colaborador;
+    
+    public LocalDate getDataInicio() {
+        return dataInicio;
+    }
+    
+    public LocalDate getDataFim() {
+        return dataFim;
+    }
 }
