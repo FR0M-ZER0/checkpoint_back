@@ -43,4 +43,9 @@ public class SolicitacaoFolga {
     @ManyToOne(fetch = FetchType.EAGER) 
     @JoinColumn(name = "colaborador_id", referencedColumnName = "col_id", insertable = false, updatable = false)
     private Colaborador colaborador;
+
+    @PrePersist
+    protected void onCreate() {
+        criadoEm = LocalDateTime.now();
+    }
 }
