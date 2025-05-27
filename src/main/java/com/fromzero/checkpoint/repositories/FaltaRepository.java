@@ -30,4 +30,16 @@ public interface FaltaRepository extends JpaRepository<Falta, Long> {
 
     @Query("SELECT CASE WHEN COUNT(f) > 0 THEN true ELSE false END FROM Falta f WHERE f.colaborador.id = :colaboradorId AND DATE(f.criadoEm) = :data")
     boolean existsByColaboradorIdAndData(@Param("colaboradorId") Long colaboradorId, @Param("data") LocalDate data);
+
+    @Query("SELECT f FROM Falta f WHERE f.criadoEm BETWEEN :inicio AND :fim "
+        + "AND (:justificado IS NULL OR f.justificado = :justificado) "
+        + "AND (:tipo IS NULL OR f.tipo = :tipo)")
+    List<Falta> findByFilters(
+        @Param("inicio") LocalDateTime inicio,
+        @Param("fim") LocalDateTime fim,
+        @Param("justificado") Boolean justificado,
+        @Param("tipo") Falta.TipoFalta tipo
+    );
+
+    List<Falta> findByColaboradorIdAndCriadoEmBetween(Long colaboradorId, LocalDateTime dataInicio, LocalDateTime dataFim);
 }
