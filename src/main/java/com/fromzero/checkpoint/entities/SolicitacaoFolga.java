@@ -38,8 +38,9 @@ public class SolicitacaoFolga {
     private LocalDateTime criadoEm;
 
     @Column(name = "sol_fol_saldo_gasto", nullable = false)
-    private String solFolSaldoGasto; // Adicione este campo
+    private String solFolSaldoGasto;
 
-    // Getters e Setters (se você não estiver usando Lombok)
-
+    @ManyToOne(fetch = FetchType.EAGER) 
+    @JoinColumn(name = "colaborador_id", referencedColumnName = "col_id", insertable = false, updatable = false)
+    private Colaborador colaborador;
 }

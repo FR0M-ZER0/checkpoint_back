@@ -10,6 +10,7 @@ import jakarta.persistence.*;
 
 import lombok.Data;
 import java.time.LocalDateTime;
+import com.fromzero.checkpoint.entities.Falta;
 
 @Entity
 @Table(name = "colaborador")
@@ -36,7 +37,14 @@ public class Colaborador {
     @OneToMany(mappedBy = "colaborador", cascade = CascadeType.ALL)
     @JsonIgnore
     private List<Resposta> respostas;
-
+    
+    @OneToMany(mappedBy = "colaborador", cascade = CascadeType.ALL)
+    @JsonIgnore
+    private List<Falta> faltas;
+    
+    @OneToMany(mappedBy = "colaborador", cascade = CascadeType.ALL)
+    @JsonIgnore
+    private List<Notificacao> notificacoes;
 
     @Column(name = "criado_em")
     private LocalDateTime criadoEm;

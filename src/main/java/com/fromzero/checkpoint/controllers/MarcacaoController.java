@@ -1,7 +1,12 @@
 package com.fromzero.checkpoint.controllers;
 
 import com.fromzero.checkpoint.dto.AtualizarHorarioMarcacaoDTO;
+import com.fromzero.checkpoint.dto.AtualizarMarcacaoDTO;
+import com.fromzero.checkpoint.dto.MarcacaoComDataDTO;
 import com.fromzero.checkpoint.dto.MarcacaoDTO;
+import com.fromzero.checkpoint.dto.MarcacaoResponseDTO;
+import com.fromzero.checkpoint.dto.MarcacoesPorDiaDTO;
+import com.fromzero.checkpoint.dto.UltimaMarcacaoResumoDTO;
 import com.fromzero.checkpoint.entities.Colaborador;
 import com.fromzero.checkpoint.entities.Marcacao;
 import com.fromzero.checkpoint.entities.Resposta.TipoResposta;
@@ -9,16 +14,21 @@ import com.fromzero.checkpoint.repositories.ColaboradorRepository;
 import com.fromzero.checkpoint.repositories.MarcacaoRepository;
 import com.fromzero.checkpoint.repositories.RespostaRepository;
 import com.fromzero.checkpoint.services.MarcacaoService;
+import com.fromzero.checkpoint.services.RelatorioMarcacoesService;
 import com.fromzero.checkpoint.services.RespostaService;
 
 import jakarta.validation.Valid;
 
+import java.io.ByteArrayInputStream;
 import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
 @RestController
@@ -40,6 +50,9 @@ public class MarcacaoController {
     @Autowired
     private ColaboradorRepository colaboradorRepository;
 
+    @Autowired
+    private RelatorioMarcacoesService relatorioMarcacoesService;
+
     // Listar todas as marcações
     @GetMapping()
     public List<Marcacao> listarMarcacoes() {
@@ -57,22 +70,21 @@ public class MarcacaoController {
     // Criar marcação
     @PostMapping()
     public ResponseEntity<Marcacao> criarMarcacao(@Valid @RequestBody MarcacaoDTO marcacaoDTO) {
+        try {
+            Marcacao.TipoMarcacao.valueOf(marcacaoDTO.getTipo().toString().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build(); // Retorna 400 se o tipo for inválido
+        }
 
-    try {
-        Marcacao.TipoMarcacao.valueOf(marcacaoDTO.getTipo().toString().toUpperCase());
-    } catch (IllegalArgumentException e) {
-        return ResponseEntity.badRequest().build(); // Retorna 400 se o tipo for inválido
-    }
+        // Criando um novo objeto Marcacao a partir do DTO
+        Marcacao novaMarcacao = new Marcacao();
+        novaMarcacao.setColaboradorId(marcacaoDTO.getColaboradorId());
+        novaMarcacao.setTipo(marcacaoDTO.getTipo());
+        novaMarcacao.setProcessada(false); // Definir como não processada inicialmente
 
-    // Criando um novo objeto Marcacao a partir do DTO
-    Marcacao novaMarcacao = new Marcacao();
-    novaMarcacao.setColaboradorId(marcacaoDTO.getColaboradorId());
-    novaMarcacao.setTipo(marcacaoDTO.getTipo());
-    novaMarcacao.setProcessada(false); // Definir como não processada inicialmente
-
-    // Salvando a nova marcação
-    Marcacao marcacaoSalva = marcacaoService.criarMarcacao(novaMarcacao);
-    return ResponseEntity.status(201).body(marcacaoSalva);
+        // Salvando a nova marcação
+        Marcacao marcacaoSalva = marcacaoService.criarMarcacao(novaMarcacao);
+        return ResponseEntity.status(201).body(marcacaoSalva);
     }
 
     // Atualizar marcação
@@ -107,6 +119,11 @@ public class MarcacaoController {
         return marcacaoService.obterTodasMarcacoesPorColaborador(colaboradorId);
     }
 
+    @GetMapping("/com-nome")
+    public List<MarcacaoResponseDTO> listarMarcacoesComNomes() {
+        return marcacaoService.listarTodasMarcacoesComNomes();
+    }
+
     // Obter marcações de um dia específico de um colaborador
     @GetMapping("/colaborador/{colaboradorId}/data/{data}")
     public List<Marcacao> obterMarcacoesPorData(
@@ -128,5 +145,94 @@ public class MarcacaoController {
         
                 respostaService.criarResposta("O horário do seu ponto foi ajustado", TipoResposta.ponto, colaborador);
         return ResponseEntity.ok(marcacaoAtualizada);
+    }
+
+    // Obter horas totais trabalhadas em um dia
+    @GetMapping("/colaborador/{colaboradorId}/total-trabalhado/{data}")
+    public ResponseEntity<String> obterTotalTrabalhadoPorDia(
+            @PathVariable Long colaboradorId, 
+            @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data) {
+        String totalTrabalhado = marcacaoService.calcularTotalTrabalhadoDiaSemFalta(colaboradorId, data);
+        return ResponseEntity.ok(totalTrabalhado);
+    }
+
+    @PutMapping("/{id}/data-horario-tipo")
+    public ResponseEntity<Marcacao> atualizarDataHorarioETipoMarcacao(
+            @PathVariable String id,
+            @Valid @RequestBody AtualizarMarcacaoDTO dto) {
+
+        Marcacao marcacaoAtualizada = marcacaoService.atualizarDataHorarioETipoMarcacao(
+            id, 
+            dto.getNovaDataHora(), 
+            dto.getNovoTipo()
+        );
+
+        Colaborador colaborador = colaboradorRepository.findById(marcacaoAtualizada.getColaboradorId())
+                .orElseThrow(() -> new RuntimeException("Colaborador não encontrado"));
+
+        respostaService.criarResposta("A data, horário e tipo do seu ponto foram ajustados", TipoResposta.ponto, colaborador);
+        
+        return ResponseEntity.ok(marcacaoAtualizada);
+    }
+
+    @GetMapping("/buscar")
+    public List<MarcacaoResponseDTO> buscarMarcacoesPorNomeColaborador(@RequestParam String nome) {
+        return marcacaoService.buscarMarcacoesPorNomeColaborador(nome);
+    }
+
+    @GetMapping("/buscar-por-tipo")
+    public List<MarcacaoResponseDTO> buscarMarcacoesPorTipo(@RequestParam Marcacao.TipoMarcacao tipo) {
+        return marcacaoService.buscarMarcacoesPorTipo(tipo);
+    }
+
+    @GetMapping("/data/{data}")
+    public List<MarcacaoResponseDTO> obterMarcacoesPorDataComNome(
+            @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data) {
+        return marcacaoService.obterMarcacoesPorDataComNomes(data);
+    }
+
+    @PostMapping("/com-data")
+    public ResponseEntity<Marcacao> criarMarcacaoComData(@Valid @RequestBody MarcacaoComDataDTO marcacaoDTO) {
+        try {
+            Marcacao.TipoMarcacao.valueOf(marcacaoDTO.getTipo().toString().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        Marcacao novaMarcacao = new Marcacao();
+        novaMarcacao.setColaboradorId(marcacaoDTO.getColaboradorId());
+        novaMarcacao.setTipo(marcacaoDTO.getTipo());
+        novaMarcacao.setProcessada(false);
+
+        Marcacao marcacaoSalva = marcacaoService.criarMarcacaoComData(novaMarcacao, marcacaoDTO.getDataHora());
+        return ResponseEntity.status(201).body(marcacaoSalva);
+    }
+
+    @GetMapping("/ultimas-hoje")
+    public List<UltimaMarcacaoResumoDTO> ultimasMarcacoesHoje() {
+        return marcacaoService.ultimasMarcacoesDeHoje(3);
+    }
+
+    @GetMapping("/marcacoes-por-dia")
+    public List<MarcacoesPorDiaDTO> marcacoesPorDia(@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data) {
+        return marcacaoService.marcacoesPorDia(data);
+    }
+
+    @GetMapping("/relatorio-marcacoes")
+    public ResponseEntity<InputStreamResource> gerarRelatorio(
+            @RequestParam(required = false) Long colaboradorId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataInicio,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim
+    ) throws Exception {
+        ByteArrayInputStream bis = relatorioMarcacoesService.gerarRelatorio(colaboradorId, dataInicio, dataFim);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Disposition", "inline; filename=relatorio-marcacoes.pdf");
+
+        return ResponseEntity
+                .ok()
+                .headers(headers)
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(new InputStreamResource(bis));
     }
 }

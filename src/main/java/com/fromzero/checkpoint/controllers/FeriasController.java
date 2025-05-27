@@ -1,18 +1,43 @@
 package com.fromzero.checkpoint.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import com.fromzero.checkpoint.services.FeriasService;
+import com.fromzero.checkpoint.services.NotificacaoService;
+import com.fromzero.checkpoint.services.RelatorioFeriasService;
+import com.fromzero.checkpoint.services.RelatorioMarcacoesService;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+
+import jakarta.persistence.EntityNotFoundException;
+
+import com.fromzero.checkpoint.entities.Colaborador;
+import com.fromzero.checkpoint.entities.Ferias;
+import com.fromzero.checkpoint.entities.Notificacao.NotificacaoTipo;
+import com.fromzero.checkpoint.repositories.ColaboradorRepository;
+import com.fromzero.checkpoint.repositories.FeriasRepository;
 // ***** IMPORTS CORRIGIDOS/ADICIONADOS *****
 import com.fromzero.checkpoint.entities.SolicitacaoAbonoFerias;
 import com.fromzero.checkpoint.entities.SolicitacaoFerias; // Precisa desta entidade!
+
+import java.io.ByteArrayInputStream;
+import java.time.LocalDate;
 // Ferias não é mais necessário como tipo de retorno ou parâmetro para /agendar
+import java.util.List;
 // import com.fromzero.checkpoint.entities.Ferias;
 import java.util.Map;
 // *****************************************
+
 
 @RestController
 @RequestMapping("/api/ferias")
@@ -21,6 +46,21 @@ public class FeriasController {
 
     @Autowired
     private FeriasService feriasService;
+
+    @Autowired
+    private FeriasRepository repository;
+
+    @Autowired
+    private ColaboradorRepository colaboradorRepository;
+
+    @Autowired
+    private NotificacaoService notificacaoService;
+
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
+    
+    @Autowired
+    private RelatorioFeriasService relatorioFeriasService;
 
     @GetMapping("/saldo")
     public ResponseEntity<?> getSaldoFerias(@RequestParam Long colaboradorId) {
@@ -33,8 +73,7 @@ public class FeriasController {
             Double saldo = feriasService.obterSaldoFerias(colaboradorId);
             return ResponseEntity.ok(saldo);
 
-        } catch (RuntimeException e) { // Captura EntityNotFound ou IllegalState do service
-            // Retorna 404 ou 400 dependendo do erro, com mensagem JSON
+        } catch (RuntimeException e) {
             HttpStatus status = (e instanceof jakarta.persistence.EntityNotFoundException) ? HttpStatus.NOT_FOUND : HttpStatus.BAD_REQUEST;
              return ResponseEntity.status(status).body(Map.of("erro", e.getMessage()));
         } catch (Exception e) {
@@ -42,6 +81,29 @@ public class FeriasController {
             // log.error("Erro inesperado ao buscar saldo", e);
             return ResponseEntity.internalServerError()
                          .body(Map.of("erro", "Erro interno ao processar requisição de saldo."));
+        }
+    }
+
+    @PutMapping("/solicitacoes/{id}/rejeitar")
+    public ResponseEntity<?> rejeitarSolicitacao(
+            @PathVariable Long id, // Pega o ID da URL
+            @RequestBody(required = false) Map<String, String> body // Recebe o corpo (comentario)
+    ) {
+        try {
+            String comentario = (body != null) ? body.get("comentarioGestor") : null;
+
+            // Chama o método do service para rejeitar
+            // Idealmente, o service retorna a solicitação atualizada
+            SolicitacaoFerias solicitacaoRejeitada = feriasService.rejeitarSolicitacao(id, comentario);
+            return ResponseEntity.ok(solicitacaoRejeitada); // Retorna 200 OK com a solicitação atualizada
+
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("erro", e.getMessage()));
+        } catch (IllegalArgumentException e) { // Ex: Comentário obrigatório não fornecido
+                return ResponseEntity.badRequest().body(Map.of("erro", e.getMessage()));
+        } catch (Exception e) {
+            // log.error("Erro ao rejeitar solicitação {}", id, e);
+                return ResponseEntity.internalServerError().body(Map.of("erro", "Erro interno ao rejeitar solicitação."));
         }
     }
 
@@ -83,5 +145,87 @@ public class FeriasController {
                           .body(Map.of("erro", "Erro interno ao processar solicitação de agendamento."));
         }
     }
+    @GetMapping("/solicitacoes")
+    public ResponseEntity<?> buscarSolicitacoes(
+            @RequestParam(required = false, defaultValue = "PENDENTE") String status,
+            // ***** 1. ADICIONA Pageable COMO PARÂMETRO *****
+            // O Spring vai preencher isso com ?page=X&size=Y&sort=Z da URL
+            // @PageableDefault define valores padrão se não vierem na URL
+            @PageableDefault(size = 12, sort = "id") Pageable pageable 
+    ) {
+        try {
 
+            Page<SolicitacaoFerias> paginaSolicitacoes = feriasService.buscarSolicitacoesPorStatus(status, pageable); 
+            return ResponseEntity.ok(paginaSolicitacoes);
+        } catch (Exception e) {
+            // log.error("Erro ao buscar solicitações de férias", e); 
+            Map<String, String> errorResponse = Map.of("erro", "Erro interno ao buscar solicitações de férias.");
+            return ResponseEntity.internalServerError().body(errorResponse);
+        }
+    }
+    @GetMapping("/solicitacoes/colaborador/{colaboradorId}")
+    public ResponseEntity<?> buscarMinhasSolicitacoes(
+            @PathVariable Long colaboradorId
+    ) {
+        try {
+            List<SolicitacaoFerias> solicitacoes = feriasService.buscarSolicitacoesPorColaborador(colaboradorId);
+            return ResponseEntity.ok(solicitacoes);
+        } catch (Exception e) {
+            Map<String, String> errorResponse = Map.of("erro", "Erro interno ao buscar histórico de solicitações.");
+            return ResponseEntity.internalServerError().body(errorResponse);
+        }
+    }
+
+    @PostMapping
+    public Ferias createFerias(@RequestBody Ferias f) {
+        Colaborador colaborador = colaboradorRepository.findById(f.getColaboradorId())
+                .orElseThrow(() -> new RuntimeException("Colaborador não encontrado"));
+
+        notificacaoService.criaNotificacao("Sua solicitação de férias foi aceita", NotificacaoTipo.ferias, colaborador);
+
+        messagingTemplate.convertAndSend("/topic/solicitacoes", f);
+        return repository.save(f);
+    }
+    
+    @GetMapping("/relatorio-ferias")
+    public ResponseEntity<InputStreamResource> gerarRelatorio(
+            @RequestParam(required = false) Long colaboradorId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataInicio,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim
+    ) throws Exception {
+        ByteArrayInputStream bis = relatorioFeriasService.gerarRelatorio(colaboradorId, dataInicio, dataFim);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Disposition", "inline; filename=relatorio-marcacoes.pdf");
+
+        return ResponseEntity
+                .ok()
+                .headers(headers)
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(new InputStreamResource(bis));
+    }
+
+    @GetMapping("/saldo-calculado")
+    public ResponseEntity<?> getSaldoCalculado(@RequestParam Long colaboradorId) {
+        try {
+            if (colaboradorId == null) {
+                return ResponseEntity.badRequest().body(Map.of("erro", "ID do colaborador é obrigatório"));
+            }
+
+            List<Ferias> feriasList = repository.findByColaboradorId(colaboradorId);
+
+            int totalDiasUsados = feriasList.stream()
+                    .mapToInt(f -> (int) java.time.temporal.ChronoUnit.DAYS.between(f.getDataInicio(), f.getDataFim()) + 1)
+                    .sum();
+
+            int saldo = 30 - totalDiasUsados;
+            saldo = Math.max(saldo, 0);
+
+            return ResponseEntity.ok(Map.of("saldo", saldo));
+
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("erro", "Erro interno ao calcular saldo de férias."));
+        }
+    }
 }

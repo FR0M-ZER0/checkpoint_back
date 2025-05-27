@@ -1,0 +1,4 @@
+# Database
+DB_USERNAME="your username"
+DB_PASSWORD="your password"
+DB_NAME="db name"
