@@ -38,13 +38,16 @@ public class SolicitacaoAjustePontoController {
 
     @PostMapping("/solicitacao")
     public SolicitacaoAjustePonto create(@RequestBody SolicitacaoAjustePonto s) {
-        repository.save(s);
-
         Marcacao marcacao = marcacaoRepository.findById(s.getMarcacaoId()).orElseThrow(() -> new RuntimeException("Marcação não encontrada"));
         Colaborador colaborador = colaboradorRepository.findById(marcacao.getColaboradorId()).orElseThrow(() -> new RuntimeException("Colaborador não encontrado"));
-        notificacaoService.criaNotificacao("Sua solicitação de ajuste na marcação do ponto foi enviada", NotificacaoTipo.ponto, colaborador);
 
+        notificacaoService.criaNotificacao("Sua solicitação de ajuste na marcação do ponto foi enviada", NotificacaoTipo.ponto, colaborador);
         messagingTemplate.convertAndSend("/topic/solicitacoes", s);
+
+        s.setColaboradorId(colaborador.getId().toString());
+        s.setColaboradorNome(colaborador.getNome());
+
+        repository.save(s);
 
         return s;
     }

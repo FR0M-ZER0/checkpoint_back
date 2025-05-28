@@ -4,7 +4,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.fromzero.checkpoint.services.FolgaService;
+import com.fromzero.checkpoint.entities.Folga;
 import com.fromzero.checkpoint.entities.SolicitacaoFolga;
+import com.fromzero.checkpoint.repositories.FolgaRepository;
 
 @RestController
 @RequestMapping("/api/folga")
@@ -13,6 +15,9 @@ public class FolgaController {
 
     @Autowired
     private FolgaService folgaService;
+
+    @Autowired
+    private FolgaRepository repository;
 
     @GetMapping("/saldo")
     public ResponseEntity<String> getSaldoHoras(@RequestParam Long colaboradorId) {
@@ -25,14 +30,7 @@ public class FolgaController {
     }
 
     @PostMapping
-    public ResponseEntity<SolicitacaoFolga> solicitarFolga(@RequestBody SolicitacaoFolga solicitacao) {
-        try {
-            SolicitacaoFolga folgaAgendada = folgaService.agendarFolga(solicitacao);
-            return ResponseEntity.ok(folgaAgendada);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(null); // Retorna a mensagem de erro
-        }
+    public Folga createFolga(@RequestBody Folga f) {
+        return repository.save(f);
     }
-
-    // ... outros endpoints ...
 }

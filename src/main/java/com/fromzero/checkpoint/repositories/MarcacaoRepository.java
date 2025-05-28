@@ -9,6 +9,8 @@ import java.util.List;
 
 public interface MarcacaoRepository extends MongoRepository<Marcacao, String> {
     List<Marcacao> findByColaboradorIdAndDataHoraBetween(Long colaboradorId, LocalDateTime inicio, LocalDateTime fim);
-
     List<Marcacao> findByColaboradorId(Long colaboradorId);
+    List<Marcacao> findByColaboradorIdIn(List<Long> colaboradorIds);
+    List<Marcacao> findByTipo(Marcacao.TipoMarcacao tipo);
+    List<Marcacao> findByDataHoraBetween(LocalDateTime start, LocalDateTime end);
 }
