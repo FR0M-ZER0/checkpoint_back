@@ -2,6 +2,7 @@ package com.fromzero.checkpoint.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -15,6 +16,7 @@ import org.springframework.data.web.PageableDefault;
 
 import jakarta.persistence.EntityNotFoundException;
 
+import com.fromzero.checkpoint.dto.FeriasResumoDTO;
 import com.fromzero.checkpoint.entities.Colaborador;
 import com.fromzero.checkpoint.entities.Ferias;
 import com.fromzero.checkpoint.entities.Notificacao.NotificacaoTipo;
@@ -23,11 +25,14 @@ import com.fromzero.checkpoint.repositories.FeriasRepository;
 // ***** IMPORTS CORRIGIDOS/ADICIONADOS *****
 import com.fromzero.checkpoint.entities.SolicitacaoAbonoFerias;
 import com.fromzero.checkpoint.entities.SolicitacaoFerias; // Precisa desta entidade!
+
+import java.time.LocalDate;
 // Ferias não é mais necessário como tipo de retorno ou parâmetro para /agendar
 import java.util.List;
 // import com.fromzero.checkpoint.entities.Ferias;
 import java.util.Map;
 // *****************************************
+import java.util.stream.Collectors;
 
 
 @RestController
@@ -196,6 +201,57 @@ public class FeriasController {
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
                     .body(Map.of("erro", "Erro interno ao calcular saldo de férias."));
+        }
+    }
+
+    @GetMapping("/todas")
+    public ResponseEntity<?> listarTodasFerias(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataInicio,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim,
+            @RequestParam(required = false) String statusFiltro
+    ) {
+        try {
+            List<Ferias> lista = repository.findAll();
+
+            if (dataInicio != null && dataFim != null) {
+                lista = lista.stream()
+                        .filter(f -> !f.getDataFim().isBefore(dataInicio) && !f.getDataInicio().isAfter(dataFim))
+                        .collect(Collectors.toList());
+            }
+
+            LocalDate hoje = LocalDate.now();
+
+            List<FeriasResumoDTO> resultado = lista.stream().map(f -> {
+                String status;
+                if (f.getDataInicio().isAfter(hoje)) {
+                    status = "AGENDADA";
+                } else if (!hoje.isBefore(f.getDataInicio()) && !hoje.isAfter(f.getDataFim())) {
+                    status = "EM_ANDAMENTO";
+                } else {
+                    status = "CONCLUIDA";
+                }
+
+                long diasTotais = java.time.temporal.ChronoUnit.DAYS.between(f.getDataInicio(), f.getDataFim()) + 1;
+
+                return new FeriasResumoDTO(
+                        f.getColaborador() != null ? f.getColaborador().getNome() : "Desconhecido",
+                        f.getDataInicio(),
+                        f.getDataFim(),
+                        diasTotais,
+                        status
+                );
+            }).collect(Collectors.toList());
+
+            if (statusFiltro != null) {
+                resultado = resultado.stream()
+                        .filter(r -> r.getStatus().equalsIgnoreCase(statusFiltro))
+                        .collect(Collectors.toList());
+            }
+
+            return ResponseEntity.ok(resultado);
+
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("erro", "Erro ao buscar lista de férias."));
         }
     }
 }
