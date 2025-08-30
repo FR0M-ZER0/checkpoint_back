@@ -23,6 +23,9 @@ import com.fromzero.checkpoint.repositories.FeriasRepository;
 // ***** IMPORTS CORRIGIDOS/ADICIONADOS *****
 import com.fromzero.checkpoint.entities.SolicitacaoAbonoFerias;
 import com.fromzero.checkpoint.entities.SolicitacaoFerias; // Precisa desta entidade!
+
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 // Ferias não é mais necessário como tipo de retorno ou parâmetro para /agendar
 import java.util.List;
 // import com.fromzero.checkpoint.entities.Ferias;
@@ -185,7 +188,7 @@ public class FeriasController {
             List<Ferias> feriasList = repository.findByColaboradorId(colaboradorId);
 
             int totalDiasUsados = feriasList.stream()
-                    .mapToInt(f -> (int) java.time.temporal.ChronoUnit.DAYS.between(f.getDataInicio(), f.getDataFim()) + 1)
+            		.mapToInt(f -> countWeekdays(f.getDataInicio(), f.getDataFim()))
                     .sum();
 
             int saldo = 30 - totalDiasUsados;
@@ -198,4 +201,24 @@ public class FeriasController {
                     .body(Map.of("erro", "Erro interno ao calcular saldo de férias."));
         }
     }
+    
+    private int countWeekdays(LocalDate start, LocalDate end) {
+        if (start == null || end == null || start.isAfter(end)) {
+            return 0;
+        }
+
+        int weekdays = 0;
+        LocalDate currentDate = start;
+
+        while (!currentDate.isAfter(end)) {
+            DayOfWeek day = currentDate.getDayOfWeek();
+            if (day != DayOfWeek.SATURDAY && day != DayOfWeek.SUNDAY) {
+                weekdays++;
+            }
+            currentDate = currentDate.plusDays(1);
+        }
+
+        return weekdays;
+    }
+    
 }

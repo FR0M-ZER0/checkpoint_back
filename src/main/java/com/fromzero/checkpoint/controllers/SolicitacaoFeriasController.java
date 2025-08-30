@@ -4,6 +4,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -60,17 +63,27 @@ public class SolicitacaoFeriasController {
                 return ResponseEntity.badRequest().body(Map.of("erro", "ColaboradorId é obrigatório"));
             }
 
-            long diasSolicitados = java.time.temporal.ChronoUnit.DAYS.between(
-                    solicitacaoFerias.getDataInicio(), solicitacaoFerias.getDataFim()) + 1;
+            LocalDate dataInicio = solicitacaoFerias.getDataInicio();
+            LocalDate dataFim = solicitacaoFerias.getDataFim();
+
+            if (dataInicio == null || dataFim == null) {
+                return ResponseEntity.badRequest().body(Map.of("erro", "Datas de início e fim são obrigatórias"));
+            }
+
+            if (dataInicio.isAfter(dataFim)) {
+                return ResponseEntity.badRequest().body(Map.of("erro", "Data de início posterior à data de fim"));
+            }
+
+            long diasSolicitados = countWeekdays(dataInicio, dataFim);
 
             if (diasSolicitados <= 0) {
-                return ResponseEntity.badRequest().body(Map.of("erro", "Período de férias inválido"));
+                return ResponseEntity.badRequest().body(Map.of("erro", "Período de férias inválido ou sem dias úteis"));
             }
 
             List<Ferias> feriasList = feriasRepository.findByColaboradorId(colaboradorId);
 
             int diasUsados = feriasList.stream()
-                    .mapToInt(f -> (int) java.time.temporal.ChronoUnit.DAYS.between(f.getDataInicio(), f.getDataFim()) + 1)
+                    .mapToInt(f -> countWeekdays(f.getDataInicio(), f.getDataFim()))
                     .sum();
 
             int saldoRestante = 30 - diasUsados;
@@ -82,12 +95,12 @@ public class SolicitacaoFeriasController {
             SolicitacaoFerias novaSolicitacao = repository.save(solicitacaoFerias);
 
             Colaborador colaborador = colaboradorRepository.findById(colaboradorId)
-                .orElseThrow(() -> new RuntimeException("Colaborador não encontrado"));
+                    .orElseThrow(() -> new RuntimeException("Colaborador não encontrado"));
 
             notificacaoService.criaNotificacao(
-                "Sua solicitação de férias foi enviada",
-                NotificacaoTipo.ferias,
-                colaborador
+                    "Sua solicitação de férias foi enviada",
+                    NotificacaoTipo.ferias,
+                    colaborador
             );
 
             messagingTemplate.convertAndSend("/topic/solicitacoes", novaSolicitacao);
@@ -98,6 +111,25 @@ public class SolicitacaoFeriasController {
             return ResponseEntity.internalServerError()
                     .body(Map.of("erro", "Erro ao processar solicitação de férias"));
         }
+    }
+
+    private int countWeekdays(LocalDate start, LocalDate end) {
+        if (start == null || end == null || start.isAfter(end)) {
+            return 0;
+        }
+
+        int weekdays = 0;
+        LocalDate currentDate = start;
+
+        while (!currentDate.isAfter(end)) {
+            DayOfWeek day = currentDate.getDayOfWeek();
+            if (day != DayOfWeek.SATURDAY && day != DayOfWeek.SUNDAY) {
+                weekdays++;
+            }
+            currentDate = currentDate.plusDays(1);
+        }
+
+        return weekdays;
     }
 
     @PutMapping("/{id}")
