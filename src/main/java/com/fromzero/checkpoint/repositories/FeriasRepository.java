@@ -19,6 +19,8 @@ public interface FeriasRepository extends JpaRepository<Ferias, Long> {
     // Método alternativo mais específico (opcional)
     List<Ferias> findByColaboradorIdAndAprovado(Long colaboradorId, Boolean aprovado);
 
+    List<Ferias> findByPeriodo(LocalDate inicio, LocalDate fim);
+
     @Query("SELECT CASE WHEN COUNT(f) > 0 THEN true ELSE false END FROM Ferias f WHERE f.colaboradorId = :colaboradorId AND :data BETWEEN f.dataInicio AND f.dataFim AND f.aprovado = true")
     boolean existsByColaboradorIdAndData(@Param("colaboradorId") Long colaboradorId, @Param("data") LocalDate data);
 }
